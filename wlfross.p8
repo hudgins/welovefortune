@@ -937,7 +937,7 @@ function restart()
 
  local function reveal_puzzle()
   toggle_theme_music(true)
-  puzzle = to_puzzle("we love fortune^ -1980's^ edition", "")
+  puzzle = to_puzzle("we love fortune^ ross^ edition", "")
   local function reveal_title()
    puzzle.revealed = true
   end
@@ -1544,7 +1544,6 @@ function end_game()
    end
   end
  end
-
  local unsorted = true
  while (unsorted) do
   unsorted = false
@@ -2018,7 +2017,7 @@ function u32_tostr(v)
  return s
 end
 
-puzzles = split("movie_the princess bride~movie_raiders of the lost ark~movie_back to the future~movie_when harry met sally...~movie_a nightmare on elm street~movie_ghostbusters~movie_blade runner~movie_ferris bueller's day off~movie_stand by me~tv show_cheers~tv show_night court~tv show_he-man and the masters of the universe~tv show_the facts of life~tv show_the golden girls~tv show_who's the boss?~tv show_family ties~tv show_teenage mutant ninja turtles~song_crazy little thing called love~song_another brick in the wall~song_another one bites the dust~song_bette davis eyes~song_jessie's girl~song_i love rock 'n' roll~song_eye of the tiger~song_every breath you take~song_sweet dreams (are made of this)~song_total eclipse of the heart~song_when doves cry~song_what's love got to do with it~song_i just called to say i love you~song_wake me up before you go-go~song_the power of love~song_money for nothing~song_papa don't preach~song_walk like an egyptian~song_livin' on a prayer~song_i still haven't found what i'm looking for~song_never gonna give you up~song_sweet child o' mine~song_bad medicine~song_every rose has its thorn~song_like a prayer~song_wind beneath my wings~song_blame it on the rain~song_we didn't start the fire~song_another day in paradise~phrase_i'll be back~phrase_i've fallen and i can't get up~phrase_i pity the fool...~phrase_where's the beef?~phrase_pardon me, do you have any grey poupon?~phrase_whatchu talkin' 'bout, willis?~phrase_gag me with a spoon!~phrase_by the power of greyskull!~toys_rubik's cube~toys_hungry hungry hippos~toys_care bears~toys_cabbage patch kids~toys_teddy ruxpin~toys_pound puppies~toys_masters of the universe~toys_sony walkman~toys_transformers~toys_mr. potato head~toys_etch-a-sketch~toys_pez dispenser~computers_commodore 64~computers_ibm personal computer~computers_sinclair zx spectrum~computers_commodore amiga~computers_trs-80 color computer~computers_apple macintosh", "~")
+puzzles = split("lyrics_dappity-doh dappity-doh dappity-doh dappity-doh~lyrics_piledriver! seems like a bloody mistake~quote_another visitor! stay a while...~quote_bomb in my briefcase~quote_can you do any less!?~quote_chautauqua! chautauqua!~quote_from frog to frog to frog to frog~quote_hush up, puppy boy~quote_not all salmon, zena. the dead ones~quote_you don't wanna watch a three hour movie?~quote_you wrecked my bed!~slogan_blaze your glory~slogan_i adore my commodore~slogan_the lowest price is the law~tv show_fraggle rock~tv show_garfield and friends~video game_frantic freddie~video game_great giana sisters~video game_kings of the beach~video game_super blood hockey~video game_super mario brothers~video game_superstar ice hockey~video game_toy bizarre", "~")
 intermission_facts = split("the ancient greeks played_a game almost identical to_wheel of fortune?~wheel of fortune_is more popular_than fortnite?~wheel of fortune_has correctly predicted the_winner of every us election?~the actual wheel of fortune_weighs over four hundred_million pounds?~wheel of fortune_was originally envisioned_as a breakfast cereal?~playing wheel of fortune_has been proven to reverse_cellular degeneration?~the letter z_has never appeared_in a word puzzle?~the letter r_is more popular_than soccer?~the letter y_did not appear in writing_until 1948?~the letter e_appears in 99.89%_of all english words?", "~")
 
 __label__

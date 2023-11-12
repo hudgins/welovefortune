@@ -648,10 +648,8 @@ function w_scoreboard_draw()
  local y0 = w_scoreboard.y
  local x1 = w_scoreboard.x + w_scoreboard.w
  local y1 = w_scoreboard.y + w_scoreboard.h
- -- scoreboard
  rectfill(x0, y0, x1, y1, c_clr_blue)
 
- -- names
  color(c_clr_white)
  rectfill(x0, y0 + (game_active_player.idx - 1) * 10 + 2, x1, y0 + game_active_player.idx * 10 + 2)
  color(c_clr_black)
@@ -660,9 +658,8 @@ function w_scoreboard_draw()
  rect(x0, y0 + 22, x1, y0 + 12)
  rect(x0, y0 + 32, x1, y0 + 2)
  rect(x0, y0, x1, y1)
- line(x0 + 30, y0, x0 + 30, y1) -- divider
+ line(x0 + 30, y0, x0 + 30, y1)
 
- -- free spins
  for id,player in pairs(game_players) do
   for i=1,player.free_spins do
    local side = flr(i / 5) -- 0 for right, 1 for left
@@ -729,7 +726,7 @@ function w_wheel_init(round)
   local x = flr(w_wheel.x + cos(delta) * w_wheel.radius)
   local y = flr(w_wheel.y + sin(delta) * w_wheel.radius)
   if (prev_x != x or prev_y != y) then
-   add(w_wheel.spokes, { x = x - w_wheel.x, y = y - w_wheel.y }) -- x,y tied to current wheel x for sliding
+   add(w_wheel.spokes, { x = x - w_wheel.x, y = y - w_wheel.y })
    prev_x = x
    prev_y = y
   end
@@ -855,7 +852,6 @@ function w_round_draw()
  if (game_round == 4) print("   bonus", x, y + 2, c_clr_blue) else print("round: "..game_round, x, y + 2, c_clr_blue) 
 end
 
--- max 8
 champions_list = {}
 
 function _init()
@@ -866,7 +862,7 @@ end
 
 function load_champs()
  local entry_width = 7
- for entry=0,7 do -- 8 entries
+ for entry=0,7 do
   local current_name = ""
   for offset=0,5 do -- 6 letters per name
    local char = chr(dget(entry * entry_width + offset))
@@ -874,7 +870,7 @@ function load_champs()
   end
   if (current_name != "") champions_list[entry + 1] = { name = current_name, score = dget(entry * 7 + 6) }
  end
- -- if champions list is empty, fill it with defaults
+ -- if empty, fill with defaults
  if (not champions_list[1]) then
   for i=1,8 do
    champions_list[i] = { name = split(opponents[i], "_")[1], score = shr(34000 - i * 4000, 16) }
@@ -937,7 +933,7 @@ function restart()
 
  local function reveal_puzzle()
   toggle_theme_music(true)
-  puzzle = to_puzzle("we love fortune^ -1980's^ edition", "")
+  puzzle = to_puzzle("wheel of nelson", "")
   local function reveal_title()
    puzzle.revealed = true
   end
@@ -954,7 +950,7 @@ function create_player(idx, name)
   free_spins = 0,
   game_total = 0,
   round_total = 0,
-  shout = "we love^fortune",
+  shout = "keep nelson^weird",
   cuss = "no fair",
   cheer = "nice"
  }
@@ -1312,7 +1308,7 @@ function article(letter)
 end
 function guess_letter(kind, letter)
  if (not letter) letter = w_letterboard.letter
- w_letterboard.remaining[letter].selected = true -- cpu
+ w_letterboard.remaining[letter].selected = true
 
  unflash()
  game_state = "state_revealing_letters"
@@ -1544,7 +1540,6 @@ function end_game()
    end
   end
  end
-
  local unsorted = true
  while (unsorted) do
   unsorted = false
@@ -1596,7 +1591,6 @@ function start_bonus_round()
  end
  game_active_player = winner -- set active player to simplify later logic
  if (winner != game_players.one) then
-  -- tax considerations
   w_bonusboard.lines = split(winner.name.." has won, but^regrettably has decided^not to participate in^the bonus round due to^"..winner.excuse..".", "^")
   game_state = "state_won"
   delay(end_game, 2)
@@ -1706,7 +1700,7 @@ function start_game()
  set_opponent_player(game_players.cpu1)
  set_opponent_player(game_players.cpu2)
  if (game_players.cpu1.name == game_players.cpu2.name) return start_game()
- next_round(1) -- skip rounds here
+ next_round(1)
  start_slide({ w_scoreboard, w_messageboard, w_round, w_wheel }, "on")
  toggle_theme_music(false)
 end
@@ -1728,7 +1722,7 @@ function adjust_power()
   else
    w_wheel.speed += 5
   end
- else -- down
+ else
   if (w_wheel.speed < 30) then
    w_wheel.power = "up"
    w_wheel.speed += 5
@@ -1794,13 +1788,8 @@ end
 
 function _draw()
  cls()
-
  local draw_method = screen_name.."_draw"
  if (screens[draw_method]) screens[draw_method]()
-
- -- centering guides
- -- rect(0, 0, 127, 127, c_clr_red)
- -- line(63, 0, 63, 127, c_clr_green)
 end
 
 function draw_box(x0, y0, x1, y1, bg_colour)
@@ -1828,7 +1817,7 @@ function start_slide(views, mode, done)
   local target = mode == "on" and slide_params[2] or slide_params[3]
   view[axis] = start
   add(sliders, { view = view, axis = axis, target = target, done = done })
-  done = nil -- only assign callback to one slider
+  done = nil -- only once
   sfx(c_snd_slide)
  end
 end
@@ -1855,9 +1844,6 @@ function slide()
  return in_progress
 end
 
--- decides how to fit a puzzle
--- into the 11,13,13,11 grid
--- returns it as a puzzle obj
 function to_puzzle(puzzle_letters, clue)
  local puzzle = { clue = clue }
  local words = {}
@@ -1904,7 +1890,6 @@ function to_tiles(puz)
  while (word <= count(puz.words)) do
   if (row > 4) break
   local len = count(puz.words[word])
-  -- if the word fits on this row
   local force_next_line = false
   if (len + rowcol - 1 <= maxcols[row]) then
    local i = 0
@@ -1930,7 +1915,7 @@ function to_tiles(puz)
   end
  end
 
- -- center puzzle vertically
+ -- vertically
  local row_adjust = 0
  if (#rows_used < 3) then
   row_adjust = 1
@@ -1942,7 +1927,7 @@ function to_tiles(puz)
   end
  end
 
- -- center puzzle horizontally
+ -- horizontally
  for row=1,4 do
   local linelen = get_line_len(tiles[row])
   if (linelen > 0) then
@@ -2000,7 +1985,6 @@ function unflash()
 end
 
 -- https://www.lexaloffle.com/bbs/?pid=22809#p
--- modified to add commas
 function u32_tostr(v)
  local orig_v = v
  local s=""
@@ -2010,7 +1994,7 @@ function u32_tostr(v)
   s=(t%0x0.0005<<17)+(v<<16&1)..s
   v=t/5
   i+=1
-  if (i == 3 and v != 0 and orig_v > 0.15258) then -- add comma over 9999
+  if (i == 3 and v != 0 and orig_v > 0.15258) then -- over 9999
    s = ","..s
    i = 0
   end
@@ -2018,8 +2002,8 @@ function u32_tostr(v)
  return s
 end
 
-puzzles = split("movie_the princess bride~movie_raiders of the lost ark~movie_back to the future~movie_when harry met sally...~movie_a nightmare on elm street~movie_ghostbusters~movie_blade runner~movie_ferris bueller's day off~movie_stand by me~tv show_cheers~tv show_night court~tv show_he-man and the masters of the universe~tv show_the facts of life~tv show_the golden girls~tv show_who's the boss?~tv show_family ties~tv show_teenage mutant ninja turtles~song_crazy little thing called love~song_another brick in the wall~song_another one bites the dust~song_bette davis eyes~song_jessie's girl~song_i love rock 'n' roll~song_eye of the tiger~song_every breath you take~song_sweet dreams (are made of this)~song_total eclipse of the heart~song_when doves cry~song_what's love got to do with it~song_i just called to say i love you~song_wake me up before you go-go~song_the power of love~song_money for nothing~song_papa don't preach~song_walk like an egyptian~song_livin' on a prayer~song_i still haven't found what i'm looking for~song_never gonna give you up~song_sweet child o' mine~song_bad medicine~song_every rose has its thorn~song_like a prayer~song_wind beneath my wings~song_blame it on the rain~song_we didn't start the fire~song_another day in paradise~phrase_i'll be back~phrase_i've fallen and i can't get up~phrase_i pity the fool...~phrase_where's the beef?~phrase_pardon me, do you have any grey poupon?~phrase_whatchu talkin' 'bout, willis?~phrase_gag me with a spoon!~phrase_by the power of greyskull!~toys_rubik's cube~toys_hungry hungry hippos~toys_care bears~toys_cabbage patch kids~toys_teddy ruxpin~toys_pound puppies~toys_masters of the universe~toys_sony walkman~toys_transformers~toys_mr. potato head~toys_etch-a-sketch~toys_pez dispenser~computers_commodore 64~computers_ibm personal computer~computers_sinclair zx spectrum~computers_commodore amiga~computers_trs-80 color computer~computers_apple macintosh", "~")
-intermission_facts = split("the ancient greeks played_a game almost identical to_wheel of fortune?~wheel of fortune_is more popular_than fortnite?~wheel of fortune_has correctly predicted the_winner of every us election?~the actual wheel of fortune_weighs over four hundred_million pounds?~wheel of fortune_was originally envisioned_as a breakfast cereal?~playing wheel of fortune_has been proven to reverse_cellular degeneration?~the letter z_has never appeared_in a word puzzle?~the letter r_is more popular_than soccer?~the letter y_did not appear in writing_until 1948?~the letter e_appears in 99.89%_of all english words?", "~")
+puzzles = split("business_backroads brewing company~business_charcuterie totoche~business_craft connection~business_ellison's market~business_epiphany cakes~business_fisherman's market~business_flexy's fresh fruit and vegetables~business_gerick cycle and ski~business_gina's gelato~business_hipperson home hardware~business_kootenay co-op~business_ktk masala shop~business_levity micro gallery~business_lillie & cohoe~business_meteor mushrooms~business_moon monster~business_nature's health products~business_nelson brewing company~business_notably, a book lover's emporium~business_otter books~business_packrat annie's~business_pixie candy shoppe~business_positive apparel~business_reo's video~business_ripping giraffe boardshop~business_shoe la la~business_silverking soya foods~business_soma studio & gallery~business_strange society tattoos~business_the potorium~business_the sacred ride~business_the tickle trunk shop~business_the timber tattoo company~business_the uphill market~business_through the looking glass~business_torchlight brewing company~business_tribute boardshop~business_virtue tea~business_wings grocery~coffee_dominion cafe~coffee_empire coffee~coffee_freshies coffee bar~coffee_java garden cafe~coffee_john ward fine coffee~coffee_no6 coffee company~coffee_oso negro cafe~coffee_sidewinders~coffee_the block at railtown~coffee_the kootenay bakery cafe co-op~coffee_wait's on nelson~highlights_baker street~highlights_big orange bridge~highlights_cottonwood community market~highlights_cottonwood falls~highlights_downtown local market~highlights_gibson lake loop trail~highlights_gyro park~highlights_kokanee creek old growth forest~highlights_lakeside beach~highlights_marketfest~highlights_nelson artwalk~highlights_nelson fire hall~highlights_nelson leafs hockey~highlights_nelson streetcar~highlights_nelson visitor centre~highlights_nelson's cold war bunker~highlights_pulpit rock trail~highlights_rails to trails~highlights_the capitol theatre~highlights_whitewater ski resort~restaurant_amanda's restaurant~restaurant_ashman's smash burgers and fries~restaurant_awaken cafe~restaurant_beauties~restaurant_big dee's fancy weiners & quality ice cream~restaurant_brixx brewhouse~restaurant_broken hill~restaurant_busaba thai cafe~restaurant_cantina del centro~restaurant_desi donair~restaurant_el taco~restaurant_finley's bar & grill~restaurant_freestyle burrito company~restaurant_full circle cafe~restaurant_how shang shway tea house~restaurant_jackson's hole & grill~restaurant_kc restaurant~restaurant_kootenay tamil kitchen~restaurant_kurama sushi~restaurant_leo's pizza and greek taverna~restaurant_louie's steakhouse & lounge~restaurant_main street diner~restaurant_marzano~restaurant_mike's place pub~restaurant_outer clove~restaurant_pitchfork eatery~restaurant_port701 marinaside dining~restaurant_red light ramen~restaurant_rel-ish~restaurant_rose garden cafe~restaurant_sage tapas & wine bar~restaurant_sprout plant-based eatery~restaurant_sushi wood nelson~restaurant_tandoori indian grill & lounge~restaurant_the black cauldron~restaurant_the general store~restaurant_the library lounge~restaurant_the royal~restaurant_the yellow deli~restaurant_thor's pizzeria~restaurant_uptown tavern~restaurant_yum son", "~")
+intermission_facts = split("nelson is named after the_tragic greek figure nelsonysus_who must forever walk uphill?_~nelson has the most_slightly-slanted mailboxes,_per-capita, in north america?_~black bears roam nelson's_streets in order to find food,_folks, and fun?_~stink bugs, common in nelson,_smell like cilantro, which is_delicious and not a problem?_~nelson is a very walkable town_so locals prefer not to drive._also parking's a nightmare?_~the official city of nelson_slogan is 'keep nelson weird',_hence this contribution?_~nelson was the setting for the_steve martin comedy film_'l.a. story'?_~nelson was disqualified from_hosting the 2010 olympic games_due to lack of mcdonalds?_~the big orange bridge is only_orange in the fall, when it_reflects the autumn leaves?", "~")
 
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
