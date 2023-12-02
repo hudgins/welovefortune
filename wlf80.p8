@@ -1,54 +1,22 @@
 pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
-c_clr_black = 0
-c_clr_dark_blue = 1
-c_clr_dark_purple = 2
-c_clr_dark_green = 3
-c_clr_brown = 4
-c_clr_dark_gray = 5
-c_clr_light_gray = 6
-c_clr_white = 7
-c_clr_red = 8
-c_clr_orange = 9
-c_clr_yellow = 10
-c_clr_green = 11
-c_clr_blue = 12
-c_clr_indigo = 13
-c_clr_pink = 14
-c_clr_peach = 15
 
-c_btn_left = 0
-c_btn_right = 1
-c_btn_up = 2
-c_btn_down = 3
-c_btn_o = 4
-c_btn_x = 5
+game_version = "v20231201"
 
-c_snd_money = 0
-c_snd_tick = 1
-c_snd_reveal = 2
-c_snd_bankrupt = 3
-c_snd_loseturn = 4
-c_snd_wrong = 5
-c_snd_freespin = 6
-c_snd_win = 6
-c_snd_spin = 7
-c_snd_button_dir = 8
-c_snd_button_x = 9
-c_snd_button_o = 10
-c_snd_slide = 11
-c_snd_shake = 12
-c_snd_super_spin = 15
+c_clr_theme = 10 -- 10 yellow, 9 orange
 
-c_num_vowel_cost = shr(250, 16)
-c_num_grand_prize = shr(25000, 16)
+c_num_vowel_cost = shr(25, 16)
+
+-- c_sat_symbol_render = "\-f\|f\^:041f001f001f0400\n\|9\-e  "
+-- c_btc_symbol_render = "\-f\|f\^:0a1f120e121f0a00\n\|9\-e  "
+-- c_money_padding = "00000" -- fri nov 24, 2023, 100,000 sats is $37.70 usd
 
 c_letters = {
  letters = split("a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"),
  consonants = split("b,c,d,f,g,h,j,k,l,m,n,p,q,r,s,t,v,w,x,y,z"),
  vowels = split("a,e,i,o,u"),
- symbols = split("1_2_3_4_5_6_7_8_9_0_-_'_._,_?_!_%_@_#_$_&_-_(_)", "_", false),
+ symbols = split("1_2_3_4_5_6_7_8_9_0_-_'_’_._,_?_!_%_@_#_$_&_-_(_)", "_", false),
  article_an = split("a,e,f,h,i,l,m,n,o,r,s,x"),
  ranked = {
   letters = split("e,a,r,i,o,t,n,s,l,c,u,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
@@ -57,12 +25,10 @@ c_letters = {
  }
 }
 
+opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the moon_poopy diaper_special_stomach upset~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_number go up_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poop_great_feeling sleepy~wanda_8_go go go_bummer_sweet_climate change~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!\nno whammies_darn_hooray_covid-19", "~")
+
 mode_name = ""
-
-opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_woooooo_poopy diaper_special_stomach upset~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_no bankrupts_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poop_great_feeling sleepy~wanda_8_go go go_bummer_sweet_climate change~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!^no whammies_darn_hooray_covid-19", "~")
-
 puzzle = {}
-
 puzzles_seen = {}
 
 wait_until = 0
@@ -70,8 +36,8 @@ wait_callback = nil
 
 function toggle_theme_music(desired_music_playing)
  if (music_playing == desired_music_playing) return
- music_playing = on == nil and not music_playing or on
- music(music_playing and 0 or -1)
+ music_playing = desired_music_playing
+ music(desired_music_playing)
 end
 
 screens = {}
@@ -85,19 +51,19 @@ function screens.start_draw()
  w_arches_draw()
  w_puzzleboard_draw()
 
- if (start.display_time + 3.5 < time()) print("by allan hudgins", 32, 110, c_clr_white)
+ if (start.display_time + 3.5 < time()) print("by allan hudgins", 32, 110, 7)
  if (start.display_time + 4.5 < time()) then
-  color(c_clr_blue)
-  print("heavily-inspired by", 26, 116)
-  print("the commodore 64 game", 22, 122)
+  color(12)
+  print(" heavily-inspired by\nthe commodore 64 game", 22, 116)
+  print(game_version, 90, 0, 5)
  end
  if (start.display_time + 6 < time()) print("press x / ❎ button", 26, 100, clr_flashing(true))
 end
 function screens.start_update()
  local start = screens.start_view
  if (start.display_time + 6 > time()) return
- if (btnp(c_btn_o) or start.display_time + 15 < time()) return screens_champions_show()
- if (btnp(c_btn_x)) start_slide({ w_arches, w_puzzleboard }, "off", screens_setup_show)
+ if (btnp(4) or start.display_time + 15 < time()) return screens_champions_show()
+ if (btnp(5)) start_slide({ w_arches, w_puzzleboard }, "off", screens_setup_show)
 end
 
 function screens_intermission_init()
@@ -114,50 +80,55 @@ function screens.intermission_draw()
  w_puzzleboard_draw()
 
  local view = screens.intermission_view
- local x0 = view.x
- local y0 = view.y
- local x1 = view.x + view.w
- local y1 = view.y + view.h
+ local x0, y0, x1, y1 =
+   view.x
+ , view.y
+ , view.x + view.w
+ , view.y + view.h
 
- draw_box(x0, y0, x1, y1, c_clr_blue)
+ draw_box(x0, y0, x1, y1, 12)
 
  local round_name = "round "..game_round + 1
  if (game_round == 3) round_name = "bonus round"
- local x= x0 + 4
- local y = y0 + 4
- print(round_name.." coming up!", x, y, c_clr_white)
- color(c_clr_black)
+ local x, y = x0 + 4, y0 + 4
+ print(round_name.." coming up!", x, y, 7)
+ color(0)
  y += 14
- print("did you know...", x, y)
- y += 7
- for line in all(screens.intermission_view.fact) do
-  y += 7
-  print(line, x, y)
+ if (view.show_scores) then
+  for player in all(game_players) do
+   local xx, yy = x + 30, y + (player.idx - 1) * 10 + 5
+   print(player.name, xx, yy)
+   print(float_to_money_str(player.game_total), xx + 29, yy)
+   line(xx - 1, yy + 6, xx + 60, yy + 6)
+  end
+ else
+   print("did you know...\n\n\n\n\n\n\n\|fit's true!", x, y)
+   print(screens.intermission_view.fact, x, y + 14)
  end
- y = y1 - 8
- print("it's true!", x, y)
 end
 function screens.intermission_update()
- if (not screens.intermission_view.fact) screens.intermission_view.fact = split(rnd(intermission_facts), "_")
- if (any_button()) then
-  local function all_off()
-   music(-1)
-   next_round(game_round + 1)
-   screens.intermission_view.fact = nil
-   if (game_round == 4) start_slide({ w_clue, w_round, w_letterboard, w_bonusboard }, "on", done) else start_slide({ w_clue, w_round, w_letterboard, w_scoreboard, w_messageboard, w_wheel }, "on", done)
-  end
-  start_slide({ screens.intermission_view }, "off", all_off)
+ local view = screens.intermission_view
+ if (not view.fact) view.fact = rnd(intermission_facts)
+ if (view.show_scores) then
+   if (any_button()) view.show_scores = false
+ else
+   if (any_button()) then
+    local function all_off()
+     view.fact = nil
+     next_round(game_round + 1)
+    end
+    start_slide({ view }, "off", all_off)
+   end
  end
 end
 function screens_intermission_show()
+ screens.intermission_view.show_scores = true
  local function done()
+  toggle_theme_music(2)
   screen_name = "intermission"
   mode_name = "intermission"
   game_state = "state_intermission"
-  local function start_music()
-   music(2)
-  end
-  start_slide({ screens.intermission_view }, "on", start_music)
+  start_slide({ screens.intermission_view }, "on")
  end
  start_slide({ w_clue, w_round, w_letterboard, w_scoreboard, w_messageboard, w_wheel }, "off", done)
 end
@@ -168,17 +139,16 @@ function screens.setup_draw()
  w_clue_draw()
  w_letterboard_draw()
 
- local x = 20
- local y = 80
+ local x, y = 20, 80
  local time_remaining = ceil(name_timeout - time())
- color(c_clr_light_gray)
+ color(6)
  print("⬅️ ➡️ ⬆️ ⬇️ to select", x, y)
  print("❎ (x) to enter", x, y + 10)
  print("🅾️ (z) to undo", x, y + 20)
- if (#game_players.one.name > 1 and time_remaining > 0 and time_remaining < 3) print("starting game in... "..tostr(time_remaining), x, y + 32, c_clr_white)
+ if (#game_players_one.name > 1 and time_remaining > 0 and time_remaining < 3) print("starting game in... "..tostr(time_remaining), x, y + 32, 7)
 end
 function screens.setup_update()
- if (#game_players.one.name > 1 and name_timeout < time()) then
+ if (#game_players_one.name > 1 and name_timeout < time()) then
   start_game()
  elseif (any_button()) then
   name_timeout = time() + 4
@@ -189,15 +159,15 @@ function screens_setup_show()
  w_puzzleboard_init("normal")
  puzzle = to_puzzle("deener", "your name")
  puzzle.revealed = false
- game_players.one.name = ""
+ game_players_one.name = ""
 
  local function on_pick()
-  game_players.one.name ..= w_letterboard.letter
+  game_players_one.name ..= w_letterboard.letter
   insert_puzzle_guess_letter(w_letterboard.letter)
-  if (#game_players.one.name < 6) select_letter_tile_to_insert() else start_game()
+  if (#game_players_one.name < 6) select_letter_tile_to_insert() else start_game()
  end
  local function on_undo()
-  game_players.one.name = sub(game_players.one.name, 1, #game_players.one.name - 1)
+  game_players_one.name = sub(game_players_one.name, 1, #game_players_one.name - 1)
   undo_letter_tile_insertion()
  end
  w_letterboard_activate("letters", on_pick, on_undo)
@@ -208,39 +178,21 @@ screens.round = {}
 function screens.round_draw()
  w_arches_draw()
  w_puzzleboard_draw()
- w_clue_draw()
- w_round_draw()
- w_letterboard_draw()
  if (game_round == 4) then
-  w_bonusboard_draw()
- else
-  w_wheel_draw()
-  local bg_colour = w_wheel.item_colour
-  -- power
-  if (w_wheel.speed > 0) then
-   local center_colour = w_wheel.speed > 100 and bg_colour or c_clr_green
-   circfill(w_wheel.x, w_wheel.y, (w_wheel.middle_radius) * (w_wheel.speed / 100), center_colour)
-  end
-  -- wheel item
-  local fg_colour = bg_colour == c_clr_black and c_clr_white or c_clr_black
-  local border_colour = bg_colour == c_clr_white and c_clr_black or c_clr_white
-  local x = w_wheel.x + 25
-  local y = 75
-  rectfill(x, y, x + 6, y + 50, bg_colour)
-  rect(x, y, x + 6, y + 50, border_colour)
-  rectfill(x - 3, y + 25, x, y + 27, border_colour)
-  if (w_wheel.just_ticked) then
-   line(x - 5, y + 28, x - 1, y + 26, c_clr_red)
+  if (bonus_mode == "spin_prize") then
+   w_wheel_draw()
+   w_messageboard_draw()
   else
-   line(x - 5, y + 26, x - 1, y + 26, c_clr_red)
+   w_clue_draw()
+   w_round_draw()
+   w_letterboard_draw()
+   w_bonusboard_draw()
   end
-  local i = 1
-  y = y - 4
-  for l in all(w_wheel.item_name) do
-   print(l, x + 2, y + 6 * i, fg_colour)
-   i += 1
-  end
-
+ else
+  w_clue_draw()
+  w_round_draw()
+  w_letterboard_draw()
+  w_wheel_draw()
   w_scoreboard_draw()
   w_messageboard_draw()
  end
@@ -267,7 +219,7 @@ end
 function screens.round.state_spin()
  if (not w_wheel.spinning and player_adjusting_power()) then
   if (w_wheel.start_power_sound) then
-   sfx(c_snd_spin, 2)
+   sfx(7, 2)
    w_wheel.start_power_sound = false
   else
    if (w_wheel.speed < 30 and w_wheel.speed > 20) w_wheel.start_power_sound = true
@@ -280,9 +232,13 @@ function screens.round.state_spin()
 end
 function screens.round.state_spin_completed()
  game_state = "state_wait"
- if (w_wheel.item_name == "bankrupt") then
-  sfx(c_snd_bankrupt)
-  start_shake(20, {
+ if (game_round == 4) then
+  sfx(w_wheel.item_name == "nothing" and 3 or 0)
+  w_messageboard_set_message("a "..w_wheel.item_name.."\nworth "..render_money(w_wheel.item_value).."!")
+  num_grand_prize = shr(w_wheel.item_value, 16)
+  delay(start_bonus_round, 2)
+ elseif (w_wheel.item_name == "bankrupt") then
+  start_shake(3, 20, {
    w_wheel,
    w_scoreboard,
    w_messageboard,
@@ -292,19 +248,18 @@ function screens.round.state_spin_completed()
    w_arches,
    w_puzzleboard
   })
-  w_messageboard_set_message(game_active_player.cuss.."!", "player")
+  w_messageboard_set_message(game_active_player.cuss.."!~player")
   delay(event_bankrupt)
  elseif (w_wheel.item_name == "freespin") then
-  sfx(c_snd_freespin)
-  w_messageboard_set_message(game_active_player.cheer.."!", "player")
+  sfx(6)
+  w_messageboard_set_message(game_active_player.cheer.."!~player")
   delay(event_freespin)
  elseif (w_wheel.item_name == "loseturn") then
-  sfx(c_snd_loseturn)
-  start_shake(10, { w_wheel })
-  w_messageboard_set_message(game_active_player.cuss.."!", "player")
+  start_shake(4, 10, { w_wheel })
+  w_messageboard_set_message(game_active_player.cuss.."!~player")
   delay(event_loseturn)
  else
-  sfx(c_snd_money)
+  sfx(0)
   w_messageboard_set_message(w_wheel.item_name)
   delay(action_consonant)
  end
@@ -324,7 +279,7 @@ end
 function action_vowel()
  if (not game_can_buy_vowel) return
 
- w_messageboard_set_message("i'd like to^buy a vowel!", "player")
+ w_messageboard_set_message("i'd like to\nbuy a vowel!~player")
  if (game_active_player.human) then
   local function on_pick()
    mode_name = ""
@@ -338,7 +293,7 @@ end
 
 function bonus_choose_letters()
  game_state = "state_bonus_letters"
- w_bonusboard.lines = split("grand prize: $"..u32_tostr(c_num_grand_prize).."^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
+ w_bonusboard.lines = split("for the "..float_to_money_str(num_grand_prize).." "..w_wheel.item_name.."^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
  local function on_pick()
   local letter = w_letterboard.letter
   if (w_bonusboard.consonants < 3) then
@@ -388,11 +343,12 @@ function screens_champions_init()
 end
 function screens.champions_draw()
  local view = screens.champions_view
- local x0 = view.x
- local y0 = view.y
- local x1 = view.x + view.w
- local y1 = view.y + view.h
- draw_box(x0, y0, x1, y1, c_clr_orange)
+ local x0, y0, x1, y1 =
+   view.x
+ , view.y
+ , view.x + view.w
+ , view.y + view.h
+ draw_box(x0, y0, x1, y1, c_clr_theme)
  x0 += 10
  y0 += 10
  print("champions", x0 + 36, y0)
@@ -402,11 +358,11 @@ function screens.champions_draw()
  for i=1,#champions_list do
   if (view.display_time + i * 0.1 > time()) break
   local name = champions_list[i].name
-  local score = u32_tostr(champions_list[i].score)
-  local name_colour = name == game_active_player.name and clr_flashing(true, c_clr_black, c_clr_orange) or c_clr_black
+  local score = float_to_money_str(champions_list[i].score)
+  local name_colour = name == game_active_player.name and clr_flashing(true, 0, c_clr_theme) or 0
   print(i..". "..name, x0, y0, name_colour)
-  print("$"..score, x0 + 80 - (#score * 4), y0)
-  y0 += 7
+  print(score, x0 + 80 - (#score * 4), y0)
+  y0 += 8
  end
  print("press x / ❎ button", 26, 100)
 end
@@ -414,7 +370,7 @@ function screens.champions_update()
  if (screens.champions_view.display_time + 10 < time() or any_button()) restart()
 end
 function screens_champions_show()
- if (game_round == 4) toggle_theme_music(true)
+ toggle_theme_music(0)
  screens.champions_view.display_time = time()
  screen_name = "champions"
  save_champs()
@@ -429,26 +385,26 @@ function w_arches_init()
   slide = "y,56,21",
   outr = 38,
   inr = 28,
-  color = c_clr_yellow
+  color = c_clr_theme
  }
 end
 function w_arches_draw()
- local y = w_arches.y
- local lx = w_arches.x + w_arches.lx
- local rx = w_arches.x + w_arches.rx
+ local y, lx, rx =
+   w_arches.y
+ , w_arches.x + w_arches.lx
+ , w_arches.x + w_arches.rx
  circfill(lx, y, w_arches.outr, w_arches.color)
  circfill(rx, y, w_arches.outr, w_arches.color)
- color(c_clr_black)
+ color(0)
  circfill(lx, y, w_arches.inr)
  circfill(rx, y, w_arches.inr)
  rectfill(lx + 20, y - 21, rx - 20, y - 20)
  rectfill(lx - 13, y + 20, rx + 13, y + 38)
  rectfill(lx - 13, y + 26, rx + 13, y + 35, w_arches.color)
- color(c_clr_dark_green)
+ color(3)
  local yds = { -19, -17, -16, -15, -13, -11 }
  local sides = { 1, -1 }
- local xd = 19
- local xdr = 107
+ local xd, xdr = 19, 107
  for yd in all(yds) do
   xd -= 1
   xdr += 1
@@ -468,15 +424,12 @@ function w_puzzleboard_init(mode)
   slide = "y,37,2"
  }
 
- -- puzzleboard letters as widgets
- local w = 6
- local h = 8
+ local w, h = 6, 8
  w_puzzleboard.cells = {}
  for row = 1,4 do
   for col = 1,13 do
    local edge_offset = (row == 1 or row == 4) and w + 2 or 0
-   if ((row == 1 or row == 4) and col > 11) then
-   else
+   if (not ((row == 1 or row == 4) and col > 11)) then
     add(w_puzzleboard.cells, {
      x = w * col + (col * 2) + w_puzzleboard.x + edge_offset,
      y = h *(row - 1) + ((row - 1) * 2) + w_puzzleboard.y,
@@ -491,12 +444,7 @@ function w_puzzleboard_init(mode)
 end
 function w_puzzleboard_draw()
  for c in all(w_puzzleboard.cells) do
-  local w = c.w
-  local h = c.h
-  local row = c.row
-  local col = c.col
-  local x = c.x
-  local y = c.y
+  local w, h, row, col, x, y = c.w , c.h , c.row , c.col , c.x , c.y
 
   if (not c.shake or c.shake == 0) then
    local edge_offset = (row == 1 or row == 4) and w + 2 or 0
@@ -504,22 +452,22 @@ function w_puzzleboard_draw()
    y = h *(row - 1) + ((row - 1) * 2) + w_puzzleboard.y
   end
 
-  rectfill(x, y, x + w, y + h, c_clr_dark_green)
+  rectfill(x, y, x + w, y + h, 3)
   if (#puzzle.tiles[row] >= col) then
    local cell = puzzle.tiles[row][col]
    if (cell.letter) then
     c.letter = cell.letter
     c.revealed = cell.revealed
     if (cell.revealed or puzzle.revealed) then
-     rectfill(x, y, x + w, y + h, c_clr_white)
-     print(cell.letter, x + 2, y + 2, c_clr_black)
+     rectfill(x, y, x + w, y + h, 7)
+     print(cell.letter, x + 2, y + 2, 0)
     elseif (cell.selected) then
      rectfill(x, y, x + w, y + h, clr_flashing())
     elseif (cell.guessed_letter) then
-     rectfill(x, y, x + w, y + h, c_clr_white)
-     print(cell.guessed_letter, x + 2, y + 2, c_clr_black)
+     rectfill(x, y, x + w, y + h, 7)
+     print(cell.guessed_letter, x + 2, y + 2, 0)
     else
-     rectfill(x , y, x + w, y + h, c_clr_light_gray)
+     rectfill(x , y, x + w, y + h, 6)
     end
    end
   end
@@ -545,14 +493,11 @@ function w_letterboard_init()
  end
 end
 function w_letterboard_draw()
- local h = w_letterboard.cellh
- local w = w_letterboard.cellw
- local fullw = w_letterboard.w
+ local h, w, fullw = w_letterboard.cellh, w_letterboard.cellw, w_letterboard.w
  rectfill(w_letterboard.x, w_letterboard.y,
           w_letterboard.x + fullw,
-          w_letterboard.y + w_letterboard.h, c_clr_dark_gray)
- local x = w_letterboard.x + 1
- local y = w_letterboard.y + 1
+          w_letterboard.y + w_letterboard.h, 5)
+ local x, y = w_letterboard.x + 1, w_letterboard.y + 1
  for l in all(c_letters.letters) do
   if (l == "n") then
    y += 10
@@ -561,13 +506,13 @@ function w_letterboard_draw()
   if (w_letterboard.remaining[l].available) then
    if (w_letterboard.remaining[l].selected) then
     rectfill(x, y, x + w, y + h, clr_flashing())
-    print(l, x + 2, y + 2, c_clr_black)
+    print(l, x + 2, y + 2, 0)
    elseif (w_letterboard.remaining[l].hidden) then
-    rectfill(x, y, x + w, y + h, c_clr_dark_blue)
-    print(l, x + 2, y + 2, c_clr_black)
+    rectfill(x, y, x + w, y + h, 1)
+    print(l, x + 2, y + 2, 0)
    else
-    rectfill(x, y, x + w, y + h, c_clr_dark_blue)
-    print(l, x + 2, y + 2, c_clr_white)
+    rectfill(x, y, x + w, y + h, 1)
+    print(l, x + 2, y + 2, 7)
    end
   end
   x += w + 2
@@ -587,10 +532,10 @@ function w_letterboard_update()
  end
 
  local dir = nil
- if (btnp(c_btn_left)) dir = "left"
- if (btnp(c_btn_right)) dir = "right"
- if (btnp(c_btn_up)) dir = "up"
- if (btnp(c_btn_down)) dir = "down"
+ if (btnp(0)) dir = "left"
+ if (btnp(1)) dir = "right"
+ if (btnp(2)) dir = "up"
+ if (btnp(3)) dir = "down"
 
  if (not dir and (starting_letter.hidden or not starting_letter.available)) dir = "right"
  if (dir) then
@@ -615,11 +560,11 @@ function w_letterboard_update()
   end
  end
 
- if (btnp(c_btn_x) and w_letterboard.on_pick) then
+ if (btnp(5) and w_letterboard.on_pick) then
   w_letterboard.remaining[w_letterboard.letter].selected = false
   w_letterboard.on_pick()
  end
- if (btnp(c_btn_o) and w_letterboard.on_undo) w_letterboard.on_undo()
+ if (btnp(4) and w_letterboard.on_undo) w_letterboard.on_undo()
 end
 function w_letterboard_unhide_all()
  for letter in all(c_letters.letters) do
@@ -644,17 +589,18 @@ function w_scoreboard_init()
  }
 end
 function w_scoreboard_draw()
- local x0 = w_scoreboard.x
- local y0 = w_scoreboard.y
- local x1 = w_scoreboard.x + w_scoreboard.w
- local y1 = w_scoreboard.y + w_scoreboard.h
+ local x0, y0, x1, y1 =
+   w_scoreboard.x,
+   w_scoreboard.y
+ , w_scoreboard.x + w_scoreboard.w
+ , w_scoreboard.y + w_scoreboard.h
  -- scoreboard
- rectfill(x0, y0, x1, y1, c_clr_blue)
+ rectfill(x0, y0, x1, y1, 12)
 
  -- names
- color(c_clr_white)
+ color(7)
  rectfill(x0, y0 + (game_active_player.idx - 1) * 10 + 2, x1, y0 + game_active_player.idx * 10 + 2)
- color(c_clr_black)
+ color(0)
  rect(x0, y0 + 2, x1, y0 + 12)
  rect(x0, y0 + 12, x1, y0 + 12)
  rect(x0, y0 + 22, x1, y0 + 12)
@@ -663,7 +609,7 @@ function w_scoreboard_draw()
  line(x0 + 30, y0, x0 + 30, y1) -- divider
 
  -- free spins
- for id,player in pairs(game_players) do
+ for player in all(game_players) do
   for i=1,player.free_spins do
    local side = flr(i / 5) -- 0 for right, 1 for left
    local slot = (i < 5 and i or i - 4) * 2
@@ -674,7 +620,7 @@ function w_scoreboard_draw()
   local total_to_show = "round_total"
   if (game_round > 1 and
       game_state == "state_wait_action" and
-      game_active_player == game_players.one and
+      game_active_player == game_players_one and
       time_since_input + 5 < time()) then
    total_to_show = "game_total"
    if (player.idx == 1) print("prior", x0 + 4, y0 + (player.idx - 1) * 10 + 5)
@@ -683,17 +629,20 @@ function w_scoreboard_draw()
   else
    print(player.name, x0 + 4, y0 + (player.idx - 1) * 10 + 5)
   end
-  print("$"..u32_tostr(player[total_to_show]), x0 + 34, y0 + (player.idx -1 ) * 10 + 5)
+  print(float_to_money_str(player[total_to_show]), x0 + 33, y0 + (player.idx -1 ) * 10 + 5)
  end
 end
 
 wheel_items = {
- split("bankrupt_0,350_14,250_13,600_9,400_8,150_12,250_14,400_9,200_13,loseturn_10,450_8,150_12,200_9,700_14,freespin_11,200_8,300_12,400_13,500_10,1000_14,200_9,300_8,800_12,750_10"),
- split("bankrupt_0,600_14,200_12,1000_10,600_8,300_14,700_9,450_12,150_13,800_8,loseturn_10,500_14,400_12,250_13,bankrupt_0,900_9,300_8,250_12,900_10,200_14,400_12,550_13,200_9,500_8"),
- split("bankrupt_0,1500_10,350_14,900_9,300_8,250_12,900_10,200_14,400_12,550_13,200_9,500_8,bankrupt_0,600_14,200_12,loseturn_10,350_13,250_8,500_12,5000_7,300_14,800_8,500_12,700_13"),
+ split("bankrupt_0,35_14,25_13,60_9,40_8,15_12,25_14,40_9,20_13,loseturn_10,45_8,15_12,20_9,70_14,freespin_11,20_8,30_12,40_13,50_10,100_14,20_9,30_8,80_12,75_10"),
+ split("bankrupt_0,60_14,20_12,100_10,60_8,30_14,70_9,45_12,15_13,80_8,loseturn_10,50_14,40_12,25_13,bankrupt_0,90_9,30_8,25_12,90_10,20_14,40_12,55_13,20_9,50_8"),
+ split("bankrupt_0,150_10,35_14,90_9,30_8,25_12,90_10,20_14,40_12,55_13,20_9,50_8,bankrupt_0,60_14,20_12,loseturn_10,35_13,25_8,50_12,500_7,30_14,80_8,50_12,70_13"),
+ split("bitcoin_9_9900,plant_14_3,vacation_10_800,shed_8_85,bicycle_12_70,scooter_10_180,watch_14_12,c64_12_50,tuque_13_3,phone_8_120,computer_10_300,tree_12_110,lamp_14_21,tv_12_333,table_10_158,couch_13_423,truck_8_4500,t-shirt_12_1,cat_10_25,dog_14_35,boat_8_2500,hot tub_12_700,car_13_3900,vacuum_10_8"),
 }
 function w_wheel_init(round)
- if (round > 3) return
+ if (round > 4) return
+ local items = wheel_items[round]
+ local first = split(items[1], "_")
  w_wheel = {
   x = 24,
   y = 100,
@@ -705,33 +654,35 @@ function w_wheel_init(round)
   tick = 0.01,
   pick = 1,
   spinning = false,
-  item_name = "bankrupt",
-  item_value = 0,
-  item_colour = 0,
-  colours = {},
+  items = items,
+  item_name = first[1],
+  item_value = first[3] or 0,
+  item_colour = first[2],
+  item_names = {},
+  item_values = {},
+  item_colours = {},
   spokes = {}
  }
- w_wheel.items = wheel_items[round]
- for s=1,#w_wheel.items do
-  w_wheel.colours[s] = split(w_wheel.items[s], "_")[2]
+ for s=1,#items do
+  local item = split(items[s], "_")
+  w_wheel.item_values[s] = tonum(item[1]) or item[3] or 0
+  w_wheel.item_names[s] = item[3] and item[1] or render_money(w_wheel.item_values[s])
+  w_wheel.item_colours[s] = item[2]
+  if (w_wheel.item_values[s] == 0) w_wheel.item_names[s] = item[1]
  end
 
  -- generate spokes to fill out wheel
- local f = 100
- local slices = 24
+ local f, slices, slice, prev_x, prev_y = 100, 24, 0, nil, nil
  local lines = slices * f
- local slice = 0
- local prev_x
- local prev_y
  for i=1,lines do
   slice = ceil(i/f)
   local delta = (i-1)/lines - w_wheel.tick
-  local x = flr(w_wheel.x + cos(delta) * w_wheel.radius)
-  local y = flr(w_wheel.y + sin(delta) * w_wheel.radius)
+  local x, y =
+    flr(w_wheel.x + cos(delta) * w_wheel.radius)
+  , flr(w_wheel.y + sin(delta) * w_wheel.radius)
   if (prev_x != x or prev_y != y) then
    add(w_wheel.spokes, { x = x - w_wheel.x, y = y - w_wheel.y }) -- x,y tied to current wheel x for sliding
-   prev_x = x
-   prev_y = y
+   prev_x, prev_y = x, y
   end
  end
 end
@@ -742,63 +693,82 @@ function w_wheel_draw()
   local spoke = w_wheel.spokes[i]
   local slice = flr((start_spoke + (i-1)) / spokes_per_slice) + 1
   if (slice > 24) slice -= 24
-  line(w_wheel.x, w_wheel.y, w_wheel.x + spoke.x, w_wheel.y + spoke.y, w_wheel.colours[slice])
+  line(w_wheel.x, w_wheel.y, w_wheel.x + spoke.x, w_wheel.y + spoke.y, w_wheel.item_colours[slice])
  end
- circfill(w_wheel.x, w_wheel.y, w_wheel.middle_radius, c_clr_dark_green)
+ circfill(w_wheel.x, w_wheel.y, w_wheel.middle_radius, 3)
+
+ local bg_colour = w_wheel.item_colour
+ -- power
+ if (w_wheel.speed > 0) then
+  local center_colour = w_wheel.speed > 100 and bg_colour or 11
+  circfill(w_wheel.x, w_wheel.y, (w_wheel.middle_radius) * (w_wheel.speed / 100), center_colour)
+ end
+ -- wheel item
+ local fg_colour, border_colour  =
+   bg_colour == 0 and 7 or 0
+ , bg_colour == 7 and 0 or 7
+ local x, y, i = w_wheel.x + 25, 75, 1
+ rectfill(x, y, x + 6, y + 50, bg_colour)
+ rect(x, y, x + 6, y + 50, border_colour)
+ rectfill(x - 3, y + 25, x, y + 27, border_colour)
+ if (w_wheel.just_ticked) line(x - 5, y + 28, x - 1, y + 26, 8) else line(x - 5, y + 26, x - 1, y + 26, 8)
+ y -= 4
+ color(fg_colour)
+ for l in all(w_wheel.item_name) do
+  print(l, x + 2, y + 6 * i)
+  i += 1
+ end
 end
 
 function w_messageboard_init()
- local x = w_scoreboard.x + 1
- local y = w_scoreboard.y + w_scoreboard.h + 1
+ local x, y =
+   w_scoreboard.x + 1
+ , w_scoreboard.y + w_scoreboard.h + 1
  w_messageboard = {
   x = x,
   y = y,
   slide = "y,"..y..",128",
   choice = "spin",
   choice_idx = 1,
-  choices = { "spin", "solve" }
+  choices = {}
  }
 end
 function w_messageboard_draw()
- local x0 = w_messageboard.x
- local y0 = w_messageboard.y
- local x1 = x0 + w_scoreboard.w - 2
- local y1 = y0 + 16
- draw_box(x0, y0, x1, y1, c_clr_yellow)
- local indicator_colour = c_clr_black
- if (mode_name == "action") indicator_colour = clr_flashing(false, c_clr_black, c_clr_yellow)
- if (w_messageboard.message_displayed
-  or game_state == "state_spin"
-  or game_state == "state_guess_puzzle"
-  or game_state == "state_revealing_letters"
-  or game_state == "state_spin_completed") then
-  print(w_messageboard.line1, x0 + 3, y0 + 3)
-  print(w_messageboard.line2, x0 + 3, y0 + 9)
+ local x0, y0 =
+   w_messageboard.x
+ , w_messageboard.y
+ local x1, y1 =
+   x0 + w_scoreboard.w - 2
+ , y0 + 16
+ draw_box(x0, y0, x1, y1, c_clr_theme)
+ local indicator_colour = 0
+ if (mode_name == "action") indicator_colour = clr_flashing(false, 0, c_clr_theme)
+ if (w_messageboard.message_displayed) then
+  print(w_messageboard.line, x0 + 3, y0 + 3)
   if (w_messageboard.speaker == "player") print("😐", x0 + 61, y0 + 9)
  elseif (game_state == "state_wait_action") then
   if (game_can_spin) then
    if (w_messageboard.choice == "spin") print("❎", x0 + 8, y0 + 3, indicator_colour)
-   print("spin", x0 + 4, y0 + 9, c_clr_black)
+   print("spin", x0 + 4, y0 + 9, 0)
   end
   if (game_can_buy_vowel) then
    if (w_messageboard.choice == "vowel") print("❎", x0 + 24 + 6, y0 + 3, indicator_colour)
-   print("vowel", x0 + 24, y0 + 9, c_clr_black)
+   print("vowel", x0 + 24, y0 + 9, 0)
   end
   if (w_messageboard.choice == "solve") print("❎", x0 + 48 + 6, y0 + 3, indicator_colour)
-  print("solve", x0 + 48, y0 + 9, c_clr_black)
+  print("solve", x0 + 48, y0 + 9, 0)
  elseif (game_state == "state_wait_free_spin") then
   if (w_messageboard.choice == "free spin") print("❎", x0 + 18, y0 + 3, indicator_colour)
-  print("free spin", x0 + 4, y0 + 9, c_clr_black)
+  print("free spin", x0 + 4, y0 + 9, 0)
   if (w_messageboard.choice == "pass") print("❎", x0 + 48 + 7, y0 + 3, indicator_colour)
-  print("pass", x0 + 48 + 3, y0 + 9, c_clr_black)
+  print("pass", x0 + 48 + 3, y0 + 9, 0)
  end
 end
-function w_messageboard_set_message(message, speaker)
- local lines = split(message, "^")
- w_messageboard.line1 = lines[1] or ""
- w_messageboard.line2 = lines[2] or ""
+function w_messageboard_set_message(message)
+ local parsed = split(message, "~")
+ w_messageboard.line = parsed[1]
  w_messageboard.message_displayed = true
- w_messageboard.speaker = speaker
+ w_messageboard.speaker = parsed[2]
 end
 
 function w_bonusboard_init()
@@ -815,11 +785,13 @@ function w_bonusboard_init()
  }
 end
 function w_bonusboard_draw()
- local x0 = w_bonusboard.x
- local y0 = w_bonusboard.y
- local x1 = w_bonusboard.x + w_letterboard.w
- local y1 = y0 + (127 - y0)
- draw_box(x0, y0, x1, y1, c_clr_yellow)
+ local x0, y0 =
+   w_bonusboard.x
+ , w_bonusboard.y
+ local x1, y1 =
+   w_bonusboard.x + w_letterboard.w
+ , y0 + (127 - y0)
+ draw_box(x0, y0, x1, y1, c_clr_theme)
 
  for line in all(w_bonusboard.lines) do
   y0 += 7
@@ -835,10 +807,9 @@ function w_clue_init()
  }
 end
 function w_clue_draw()
- local x = w_clue.x
- local y = w_clue.y
- rectfill(x - 2, y, x + 128, y + 8, c_clr_black)
- print("clue: "..puzzle.clue, x, y + 2, c_clr_yellow)
+ local x, y = w_clue.x, w_clue.y
+ rectfill(x - 2, y, x + 128, y + 8, 0)
+ print("clue: "..puzzle.clue, x, y + 2, c_clr_theme)
 end
 
 function w_round_init()
@@ -849,17 +820,16 @@ function w_round_init()
  }
 end
 function w_round_draw()
- local x = w_round.x
- local y = w_round.y
- rectfill(x - 2, y, x + 40, y + 8, c_clr_black)
- if (game_round == 4) print("   bonus", x, y + 2, c_clr_blue) else print("round: "..game_round, x, y + 2, c_clr_blue) 
+ local x, y = w_round.x, w_round.y
+ rectfill(x - 2, y, x + 40, y + 8, 0)
+ if (game_round == 4) print("   bonus", x, y + 2, 12) else print("     r-"..game_round, x, y + 2, 12) 
 end
 
 -- max 8
 champions_list = {}
 
 function _init()
- cartdata("wlf_cart_data_v1")
+ cartdata("wob_cart_data_v2")
  load_champs()
  restart()
 end
@@ -877,7 +847,7 @@ function load_champs()
  -- if champions list is empty, fill it with defaults
  if (not champions_list[1]) then
   for i=1,8 do
-   champions_list[i] = { name = split(opponents[i], "_")[1], score = shr(34000 - i * 4000, 16) }
+   champions_list[i] = { name = split(opponents[i], "_")[1], score = shr(340 - i * 40, 16) }
   end
  end
 end
@@ -905,6 +875,7 @@ function restart()
  name_timeout = 0
 
  game_state = "state_start"
+ bonus_mode = nil
  game_round = 1
  game_only_vowels_remain_in_puzzle = false
  game_only_vowels_remain_on_board = false
@@ -912,11 +883,11 @@ function restart()
  game_all_letters_revealed = false
  game_can_spin = true
  game_can_buy_vowel = false
- game_players = {}
- game_players.one = create_player(1, "")
- game_players.cpu1 = create_player(2)
- game_players.cpu2 = create_player(3)
- game_active_player = game_players.one
+ game_players_one = create_player(1, "")
+ game_players_cpu1 = create_player(2)
+ game_players_cpu2 = create_player(3)
+ game_players = { game_players_one, game_players_cpu1, game_players_cpu2 }
+ game_active_player = game_players_one
  game_cpu_delay = 0
 
  puzzle = to_puzzle("", "")
@@ -936,8 +907,8 @@ function restart()
  screens_champions_init()
 
  local function reveal_puzzle()
-  toggle_theme_music(true)
-  puzzle = to_puzzle("we love fortune^ -1980's^ edition", "")
+  toggle_theme_music(0)
+  puzzle = to_puzzle("we love fortune", "")
   local function reveal_title()
    puzzle.revealed = true
   end
@@ -954,8 +925,8 @@ function create_player(idx, name)
   free_spins = 0,
   game_total = 0,
   round_total = 0,
-  shout = "we love^fortune",
-  cuss = "no fair",
+  shout = "we love\nfortune",
+  cuss = "darnies",
   cheer = "nice"
  }
 end
@@ -980,17 +951,17 @@ end
 function acknowledge_player_input()
  if (not game_active_player.human or player_adjusting_power()) return
 
- if (btnp(c_btn_left) or
-  btnp(c_btn_right) or
-  btnp(c_btn_up) or
-  btnp(c_btn_down)) then
-  sfx(c_snd_button_dir)
+ if (btnp(0) or
+  btnp(1) or
+  btnp(2) or
+  btnp(3)) then
+  sfx(8)
   unflash()
- elseif (btnp(c_btn_o)) then
-  sfx(c_snd_button_o)
+ elseif (btnp(4)) then
+  sfx(10)
   unflash()
- elseif (btnp(c_btn_x)) then
-  sfx(c_snd_button_x)
+ elseif (btnp(5)) then
+  sfx(9)
   unflash()
  end
 end
@@ -1029,15 +1000,15 @@ end
 
 function player_chose_spin()
  if (game_active_player.human) then
-  return btnp(c_btn_x) and w_messageboard.choice == "spin"
+  return btnp(5) and w_messageboard.choice == "spin"
  else
   return cpu_player_choose_action() == "spin"
  end
 end
 
 function cpu_player_choose_action()
- local other_cpu = game_players.cpu1
- if (game_active_player == game_players.cpu1) other_cpu = game_players.cpu2
+ local other_cpu = game_players_cpu1
+ if (game_active_player == game_players_cpu1) other_cpu = game_players_cpu2
 
  local choice = "solve"
  local count = count_letter_in_puzzle("*")
@@ -1058,7 +1029,7 @@ end
 
 function player_chose_vowel()
  if (game_active_player.human) then
-  return btnp(c_btn_x) and w_messageboard.choice == "vowel"
+  return btnp(5) and w_messageboard.choice == "vowel"
  else
   return cpu_player_choose_action() == "vowel"
  end
@@ -1067,11 +1038,9 @@ end
 function cpu_player_guess_letter(kind)
  if (kind == "puzzle") return "*"
 
- local choice = nil
- local offset = 1
+ local choice, offset = nil, 1
  while (not choice) do
-  local n
-  local l
+  local n, l
   if (game_active_player.skill > 5) then
    n = c_letters.ranked[kind][offset]
    l = w_letterboard.remaining[n]
@@ -1092,20 +1061,16 @@ end
 function cpu_player_guess_puzzle()
  unflash()
  w_letterboard.remaining[w_letterboard.letter].selected = false
- sfx(c_snd_button_x)
+ sfx(9)
  local all_done, actual_letter = insert_puzzle_guess_letter("*")
  w_letterboard.letter = actual_letter
  w_letterboard.remaining[w_letterboard.letter].selected = true
- if (all_done) then
-  puzzle_guess_letter("*")
- else
-  delay(cpu_player_guess_puzzle, rnd(0.25) + 0.05)
- end
+ if (all_done) puzzle_guess_letter("*") else delay(cpu_player_guess_puzzle, rnd(0.25) + 0.05)
 end
 
 function player_chose_solve()
  if (game_active_player.human) then
-  return btnp(c_btn_x) and w_messageboard.choice == "solve"
+  return btnp(5) and w_messageboard.choice == "solve"
  else
   return cpu_player_choose_action() == "solve"
  end
@@ -1114,7 +1079,7 @@ end
 function player_adjusting_power()
  if (game_state != "state_spin") return false
  if (game_active_player.human) then
-  return btn(c_btn_x) and w_messageboard.choice == "spin"
+  return btn(5) and w_messageboard.choice == "spin"
  else
   return ceil(rnd(100)) < 95
  end
@@ -1122,7 +1087,7 @@ end
 
 function player_uses_free_spin()
  if (game_active_player.human) then
-  return btnp(c_btn_x) and w_messageboard.choice == "free spin"
+  return btnp(5) and w_messageboard.choice == "free spin"
  else
   return true
  end
@@ -1130,46 +1095,40 @@ end
 
 function player_passes()
  if (game_active_player.human) then
-  return btnp(c_btn_x) and w_messageboard.choice == "pass"
+  return btnp(5) and w_messageboard.choice == "pass"
  else
   return false
  end
 end
 
 function update_chosen_action()
- if (btnp(c_btn_left)) then
+ if (btnp(0)) then
   w_messageboard.choice_idx -= 1
-  if (not w_messageboard.choices[w_messageboard.choice_idx]) then
-   w_messageboard.choice_idx = 1
-  end
- elseif (btnp(c_btn_right)) then
+  if (not w_messageboard.choices[w_messageboard.choice_idx]) w_messageboard.choice_idx = 1
+ elseif (btnp(1)) then
   w_messageboard.choice_idx += 1
-  if (not w_messageboard.choices[w_messageboard.choice_idx]) then
-   w_messageboard.choice_idx = #w_messageboard.choices
-  end
+  if (not w_messageboard.choices[w_messageboard.choice_idx]) w_messageboard.choice_idx = #w_messageboard.choices
  end
  w_messageboard.choice = w_messageboard.choices[w_messageboard.choice_idx]
 end
 
 function puzzle_guess_letter(letter, custom_handling)
- local all_done = insert_puzzle_guess_letter(letter)
- local correct = false
+ local all_done, correct = insert_puzzle_guess_letter(letter), false
  if (all_done) then
   correct = check_puzzle_correctness()
   if (correct) then
    game_state = "state_won"
    puzzle.revealed = true
-   sfx(c_snd_win)
+   sfx(6)
    if (custom_handling) return all_done, correct
 
-   w_messageboard_set_message("congratulations!^that's correct!")
+   w_messageboard_set_message("congratulations!\nthat's correct!")
    delay(end_round)
   else
-   start_shake(20)
-   sfx(c_snd_wrong)
+   start_shake()
    if (custom_handling) return all_done, correct
 
-   w_messageboard_set_message("sorry, that is^incorrect.")
+   w_messageboard_set_message("sorry, that is\nincorrect.")
    delay(event_loseturn)
   end
  end
@@ -1215,7 +1174,7 @@ function update_actions_available(state)
  else
   if (game_can_spin) add(w_messageboard.choices, "spin")
   if (game_can_buy_vowel) add(w_messageboard.choices, "vowel")
-  add(w_messageboard.choices, "solve")
+  if (not bonus_mode) add(w_messageboard.choices, "solve")
  end
 end
 
@@ -1231,8 +1190,7 @@ function check_puzzle_correctness()
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter) then
-    cell.guessed_letter = nil
-    cell.selected = false
+    cell.guessed_letter, cell.selected = nil, false
    end
   end
  end
@@ -1257,11 +1215,9 @@ function undo_letter_tile_insertion()
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (cell.selected) then
-    cell.selected = false
-    cell.guessed_letter = nil
+    cell.selected, cell.guessed_letter = false, nil
     if (prev) then
-     prev.selected = true
-     prev.guessed_letter = nil
+     prev.selected, prev.guessed_letter = true, nil
     end
     return
    end
@@ -1278,8 +1234,7 @@ function insert_puzzle_guess_letter(letter)
    if (cell.letter and not cell.revealed and not cell.guessed_letter) then
     cell.guessed_letter = letter
     if (letter == "*") then
-     cell.guessed_letter = cell.letter
-     letter = cell.letter
+     cell.guessed_letter, letter = cell.letter, cell.letter
     end
     done = true
     break
@@ -1316,7 +1271,7 @@ function guess_letter(kind, letter)
 
  unflash()
  game_state = "state_revealing_letters"
- w_messageboard_set_message("is there "..article(letter).." "..letter.."?", "player")
+ w_messageboard_set_message("is there "..article(letter).." "..letter.."?~player")
 
  local count = count_letter_in_puzzle(letter)
  if (count > 0) then
@@ -1345,8 +1300,7 @@ function guess_letter(kind, letter)
    w_letterboard.remaining[letter].available = false
    w_letterboard.remaining[letter].selected = false
    w_messageboard_set_message("sorry, no "..letter.."'s.")
-   sfx(c_snd_wrong)
-   start_shake(10)
+   start_shake(5, 10)
    delay(event_loseturn)
   end
   delay(cb)
@@ -1354,12 +1308,12 @@ function guess_letter(kind, letter)
 end
 
 shakey_dakeys = {}
-function start_shake(amount, things)
- sfx(c_snd_shake)
- shakey_dakeys = {}
- if (things) then
-  shakey_dakeys = things
- else
+function start_shake(sound, amount, things)
+ sfx(sound or 5)
+ sfx(12)
+ amount = amount or 20
+ shakey_dakeys = things or {}
+ if (not things) then
   for c in all(w_puzzleboard.cells) do
    if (c.letter and not c.revealed) add(shakey_dakeys, c)
   end
@@ -1389,8 +1343,7 @@ function reveal_letter(letter)
  w_letterboard.remaining[letter].available = false
  w_letterboard.remaining[letter].selected = false
 
- local count = count_letter_in_puzzle(letter)
- if (count > 0) reveal_puzzle_letter(letter)
+ if (count_letter_in_puzzle(letter) > 0) reveal_puzzle_letter(letter)
 end
 
 function reveal_letters(letters, done)
@@ -1423,7 +1376,7 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
  local function make_reveal(cell)
   local function reveal()
    cell.revealed = true
-   sfx(c_snd_reveal)
+   sfx(2)
    if (on_reveal) on_reveal()
   end
   return reveal
@@ -1455,14 +1408,14 @@ end
 
 function next_player()
  mode_name = "action"
- if (game_active_player == game_players.one) then
-  game_active_player = game_players.cpu1
- elseif (game_active_player == game_players.cpu1) then
-  game_active_player = game_players.cpu2
+ if (game_active_player == game_players_one) then
+  game_active_player = game_players_cpu1
+ elseif (game_active_player == game_players_cpu1) then
+  game_active_player = game_players_cpu2
  else
-  game_active_player = game_players.one
+  game_active_player = game_players_one
  end
- w_messageboard_set_message("your turn,^"..game_active_player.name..".")
+ w_messageboard_set_message("your turn,\n"..game_active_player.name..".")
  delay(update_actions_available)
 end
 
@@ -1475,28 +1428,65 @@ function end_round()
 end
 
 function next_round(round)
+ toggle_theme_music(-1)
  screen_name = "round"
  game_round = round
- game_players.one.round_total = 0
- game_players.cpu1.round_total = 0
- game_players.cpu2.round_total = 0
+ game_players_one.round_total = 0
+ game_players_cpu1.round_total = 0
+ game_players_cpu2.round_total = 0
  w_puzzleboard_init("normal")
  w_wheel_init(game_round)
 
+ -- todo: fix clue sliding on for round 1 even though it's already on the screen -- slide it off first?
+ if (game_round < 4) start_slide({ w_clue, w_round, w_letterboard, w_scoreboard, w_messageboard, w_wheel }, "on")
+
  if (game_round == 1) then
-  game_active_player = game_players.one
+  game_active_player = game_players_one
  elseif (game_round == 2) then
-  game_active_player = game_players.cpu1
+  game_active_player = game_players_cpu1
  elseif (game_round == 3) then
-  game_active_player = game_players.cpu2
+  game_active_player = game_players_cpu2
  elseif (game_round == 4) then
-  start_bonus_round()
+  mode_name = ""
+  local winner = game_players_one
+  local totals = {
+   game_players_one.game_total,
+   game_players_cpu1.game_total,
+   game_players_cpu2.game_total
+  }
+  if (totals[1] < totals[2] or totals[1] < totals[3]) then
+   if (totals[2] >= totals[3]) winner = game_players_cpu1 else winner = game_players_cpu2
+  end
+  game_active_player = winner -- set active player to simplify later logic
+  if (winner != game_players_one) then
+   -- tax considerations
+   w_bonusboard.lines = split(winner.name.." has won, but^regrettably has decided^not to participate in^the bonus round due to^"..winner.excuse..".", "^")
+   game_state = "state_won"
+   delay(end_game, 2)
+  else
+   bonus_mode = "spin_prize"
+   toggle_theme_music(-1)
+   local function cb()
+    update_actions_available()
+    w_messageboard_set_message("spin to choose a\nbonus prize!")
+   end
+   start_slide({ w_wheel, w_messageboard }, "on", cb)
+  end
   return
  end
 
  new_puzzle()
- w_messageboard_set_message(game_active_player.name.." starts^this round.")
+ w_messageboard_set_message(game_active_player.name.." starts\nthis round.")
  delay(update_actions_available)
+end
+
+function start_bonus_round()
+ local function done()
+  bonus_mode = "solve_puzzle"
+  w_bonusboard.lines = split("      bonus round^^we give you:^  r s t l n^and^  e", "^")
+  start_slide({ w_clue, w_round, w_letterboard, w_bonusboard }, "on", new_puzzle)
+ end
+ start_slide({ w_wheel, w_messageboard }, "off", done)
 end
 
 function remove_champion(name)
@@ -1512,13 +1502,13 @@ end
 
 function end_game()
  mode_name = ""
- if (game_state == "state_won") game_active_player.game_total += c_num_grand_prize
+ if (game_state == "state_won") game_active_player.game_total += num_grand_prize
  if (game_active_player.human) then
   puzzle.revealed = true
-  w_bonusboard.lines[6] = "       $"..u32_tostr(game_active_player.game_total)
+  w_bonusboard.lines[3] = float_to_money_str(game_active_player.game_total).." grand total"
  end
 
- for id,player in pairs(game_players) do
+ for player in all(game_players) do
   if (player != game_active_player) remove_champion(player.name)
  end
 
@@ -1561,8 +1551,7 @@ function end_game()
 end
 
 function new_puzzle()
- local already_played = true
- local puz_idx
+ local already_played, puz_idx = true
  if (#puzzles_seen == #puzzles) then
   for i=1,#puzzles_seen do
    puzzles_seen[i] = false
@@ -1579,68 +1568,41 @@ function new_puzzle()
  for x in all(c_letters.symbols) do
   reveal_puzzle_letter(x)
  end
+ if (bonus_mode == "solve_puzzle") reveal_letters(split("r,s,t,l,n,e"), bonus_choose_letters)
 
  w_letterboard_init()
 end
 
-function start_bonus_round()
- mode_name = ""
- local winner = game_players.one
- local totals = {
-  game_players.one.game_total,
-  game_players.cpu1.game_total,
-  game_players.cpu2.game_total
- }
- if (totals[1] < totals[2] or totals[1] < totals[3]) then
-  if (totals[2] >= totals[3]) winner = game_players.cpu1 else winner = game_players.cpu2
- end
- game_active_player = winner -- set active player to simplify later logic
- if (winner != game_players.one) then
-  -- tax considerations
-  w_bonusboard.lines = split(winner.name.." has won, but^regrettably has decided^not to participate in^the bonus round due to^"..winner.excuse..".", "^")
-  game_state = "state_won"
-  delay(end_game, 2)
- else
-  new_puzzle()
-  w_bonusboard.lines = split("      bonus round^^we give you:^  r s t l n^and^  e", "^")
-  reveal_letters({"r", "s", "t", "l", "n", "e"}, bonus_choose_letters)
- end
-end
-
 function action_spin()
  if (not game_can_spin) return
- mode_name = "spin"
- game_state = "state_spin"
- w_messageboard_set_message("i'd like to spin^the wheel!", "player")
+ mode_name, game_state = "spin", "state_spin"
+ w_messageboard_set_message("i'd like to spin\nthe wheel!~player")
  adjust_power()
 end
 
 function action_solve()
- local is_bonus_round = game_round == 4
- local on_all_incorrect_fn
- local on_all_correct_fn
+ local is_bonus_round, on_all_incorrect_fn, on_all_correct_fn = game_round == 4
  game_state = "state_guess_puzzle"
 
  if (is_bonus_round) then
-   w_bonusboard.lines = split(",   solve the puzzle!")
+  w_bonusboard.lines = split(",   solve the puzzle!")
   local function on_all_correct()
-   sfx(c_snd_win)
+   sfx(6)
    game_state = "state_won"
-   w_bonusboard.lines = split("    congratulations!,,,  your total winnings:,,")
+   w_bonusboard.lines = split("    congratulations!,,,,,")
    delay(end_game)
   end
   local function on_all_incorrect()
-   w_bonusboard.lines = split("wrong!,too bad.,,  your total winnings:,,")
+   w_bonusboard.lines = split("wrong!,too bad.,,,,")
    game_state = "state_bonus_puzzle_lost"
-   start_shake(20)
-   sfx(c_snd_wrong)
+   start_shake()
    delay(end_game)
   end
 
   on_all_correct_fn = on_all_correct
   on_all_incorrect_fn = on_all_incorrect
  else
-  w_messageboard_set_message("i will solve^the puzzle!", "player")
+  w_messageboard_set_message("i will solve\nthe puzzle!~player")
  end
 
  local function deferred()
@@ -1694,21 +1656,19 @@ end
 
 function any_button()
  return
-  btnp(c_btn_left) or
-  btnp(c_btn_right) or
-  btnp(c_btn_up) or
-  btnp(c_btn_down) or
-  btnp(c_btn_o) or
-  btnp(c_btn_x)
+  btnp(0) or
+  btnp(1) or
+  btnp(2) or
+  btnp(3) or
+  btnp(4) or
+  btnp(5)
 end
 
 function start_game()
- set_opponent_player(game_players.cpu1)
- set_opponent_player(game_players.cpu2)
- if (game_players.cpu1.name == game_players.cpu2.name) return start_game()
+ set_opponent_player(game_players_cpu1)
+ set_opponent_player(game_players_cpu2)
+ if (game_players_cpu1.name == game_players_cpu2.name) return start_game()
  next_round(1) -- skip rounds here
- start_slide({ w_scoreboard, w_messageboard, w_round, w_wheel }, "on")
- toggle_theme_music(false)
 end
 function set_opponent_player(player)
  local opponent_fields = split(rnd(opponents), "_")
@@ -1744,10 +1704,9 @@ function start_stop_spin()
    w_wheel.cheat = true
    w_wheel.speed = 150 + ceil(rnd(25))
    w_messageboard_set_message("super-spin!")
-   sfx(c_snd_super_spin)
-   start_shake(10, { w_wheel })
+   start_shake(15, 10, { w_wheel })
   else
-   w_messageboard_set_message(game_active_player.shout.."!", "player")
+   w_messageboard_set_message(game_active_player.shout.."!~player")
   end
   w_wheel.spinning = true
   mode_name = ""
@@ -1768,21 +1727,19 @@ function adjust_spin()
   w_wheel.pick = flr((w_wheel.tick * 1000) / (1000 / 24)) + 1 -- 24 slices
   local prev_item = w_wheel.item_name
   local item = split(w_wheel.items[w_wheel.pick], "_")
-  w_wheel.item_value = tonum(item[1]) or 0
-  w_wheel.item_name = "$"..w_wheel.item_value
-  w_wheel.item_colour = item[2]
-  if (w_wheel.item_value == 0) w_wheel.item_name = item[1]
-  if (item[3]) w_wheel.item_value = tonum(item[3]) -- bonus prize
+  w_wheel.item_value = w_wheel.item_values[w_wheel.pick]
+  w_wheel.item_name = w_wheel.item_names[w_wheel.pick]
+  w_wheel.item_colour = w_wheel.item_colours[w_wheel.pick]
   if (prev_item != w_wheel.item_name) then
    w_wheel.just_ticked = true
-   sfx(c_snd_tick)
+   sfx(1)
   else
    w_wheel.just_ticked = false
   end
  else
   if (w_wheel.cheat and (w_wheel.item_name == "bankrupt" or w_wheel.item_name == "loseturn")) then
    w_wheel.speed = 0.5
-   w_messageboard_set_message("awfully^lucky...")
+   w_messageboard_set_message("awfully\nlucky...")
   else
    w_wheel.cheat = false
    w_wheel.speed = 0
@@ -1799,13 +1756,13 @@ function _draw()
  if (screens[draw_method]) screens[draw_method]()
 
  -- centering guides
- -- rect(0, 0, 127, 127, c_clr_red)
- -- line(63, 0, 63, 127, c_clr_green)
+ -- rect(0, 0, 127, 127, 8)
+ -- line(63, 0, 63, 127, 11)
 end
 
 function draw_box(x0, y0, x1, y1, bg_colour)
  rectfill(x0, y0, x1, y1, bg_colour)
- color(c_clr_black)
+ color(0)
  rect(x0 + 1, y0 + 1, x1 - 1, y1 - 1)
  pset(x0, y0)
  pset(x0, y1)
@@ -1816,7 +1773,7 @@ function draw_box(x0, y0, x1, y1, bg_colour)
  pset(x0 + 1, y1 - 1)
  pset(x1 - 1, y0 + 1)
  pset(x1 - 1, y1 - 1)
- color(c_clr_black)
+ color(0)
 end
 
 sliders = {}
@@ -1829,7 +1786,7 @@ function start_slide(views, mode, done)
   view[axis] = start
   add(sliders, { view = view, axis = axis, target = target, done = done })
   done = nil -- only assign callback to one slider
-  sfx(c_snd_slide)
+  sfx(11)
  end
 end
 function slide()
@@ -1859,11 +1816,9 @@ end
 -- into the 11,13,13,11 grid
 -- returns it as a puzzle obj
 function to_puzzle(puzzle_letters, clue)
- local puzzle = { clue = clue }
- local words = {}
+ local puzzle, words = { clue = clue }, {}
  words[1] = {}
- local wordcount = 0
- local inword = false
+ local wordcount, inword = 0, false
  for l in all(puzzle_letters) do
   if (l == " ") then
    if (inword) inword = false
@@ -1887,11 +1842,13 @@ function to_puzzle(puzzle_letters, clue)
 end
 
 function to_tiles(puz)
- local maxcols = { 11, 13, 13, 11 }
- local row = 1
- local rowcol = 1
-
- local tiles = {}
+ local maxcols, row, rowcol, tiles, word, rows_used =
+   { 11, 13, 13, 11 }
+ , 1
+ , 1
+ , {}
+ , 1
+ , {}
  for r=1,4 do
   tiles[r] = {}
   for col=1,13 do
@@ -1899,15 +1856,14 @@ function to_tiles(puz)
   end
  end
 
- local word = 1
- local rows_used = {}
  while (word <= count(puz.words)) do
   if (row > 4) break
-  local len = count(puz.words[word])
+  local len, force_next_line, i =
+    count(puz.words[word])
+  , false
+  , 0
   -- if the word fits on this row
-  local force_next_line = false
   if (len + rowcol - 1 <= maxcols[row]) then
-   local i = 0
    for l in all(puz.words[word]) do
     if (l == "^") then
      force_next_line = true
@@ -1919,7 +1875,7 @@ function to_tiles(puz)
    tiles[row][rowcol+i] = { letter = nil }
    word += 1
    if (force_next_line) then
-    rowcol = 11
+    rowcol = 13
    else
     rowcol += len + 1
    end
@@ -1931,12 +1887,10 @@ function to_tiles(puz)
  end
 
  -- center puzzle vertically
- local row_adjust = 0
  if (#rows_used < 3) then
-  row_adjust = 1
   for row=#rows_used,1,-1 do
    for i=1,maxcols[row] do
-    tiles[row+row_adjust][i] = tiles[row][i]
+    tiles[row+1][i] = tiles[row][i]
     tiles[row][i] = { letter = nil }
    end
   end
@@ -1960,9 +1914,7 @@ function to_tiles(puz)
 end
 
 function get_line_len(line)
- local len = 0
- local spaces = 0
- local last = nil
+ local len, spaces, last = 0, 0, nil
  for col in all(line) do
   if (col.letter) then
    len += 1
@@ -1976,11 +1928,10 @@ function get_line_len(line)
  return len + spaces
 end
 
-flash_colour = nil
-flash_interval = 0
+flash_colour, flash_interval = nil, 0
 function clr_flashing(instant, on_colour, off_colour)
- on_colour = on_colour or c_clr_yellow
- off_colour = off_colour or c_clr_black
+ on_colour = on_colour or c_clr_theme
+ off_colour = off_colour or 0
  flash_colour = flash_colour or on_colour
  if (not instant and time() < time_since_input + 15) return on_colour
  flash_interval += 1
@@ -1995,31 +1946,41 @@ function clr_flashing(instant, on_colour, off_colour)
  return flash_colour
 end
 function unflash()
- flash_colour = nil
- time_since_input = time()
+ flash_colour, time_since_input = nil, time()
+end
+
+function render_money(value)
+ local padding = (value == "0" or value == 0) and "" or "0"
+ local padded = value..padding
+ if (#padded < 5) return "$"..padded
+
+ local arr, rendered = split(padded, "", false), ""
+ comma_idx = 0
+ for i = #arr,1,-1 do
+  local s = arr[i]
+  comma_idx += 1
+  if (comma_idx == 4 and i >= 1) then
+   comma_idx, rendered = 1, ","..rendered
+  end
+  rendered = s..rendered
+ end
+ return "$"..rendered
 end
 
 -- https://www.lexaloffle.com/bbs/?pid=22809#p
--- modified to add commas
-function u32_tostr(v)
- local orig_v = v
- local s=""
- local i=0
+function float_to_money_str(v)
+ local orig_v, s, i = v, "", 0
  repeat
   local t=v>>>1
   s=(t%0x0.0005<<17)+(v<<16&1)..s
   v=t/5
   i+=1
-  if (i == 3 and v != 0 and orig_v > 0.15258) then -- add comma over 9999
-   s = ","..s
-   i = 0
-  end
  until v==0
- return s
+ return render_money(s)
 end
 
 puzzles = split("movie_the princess bride~movie_raiders of the lost ark~movie_back to the future~movie_when harry met sally...~movie_a nightmare on elm street~movie_ghostbusters~movie_blade runner~movie_ferris bueller's day off~movie_stand by me~tv show_cheers~tv show_night court~tv show_he-man and the masters of the universe~tv show_the facts of life~tv show_the golden girls~tv show_who's the boss?~tv show_family ties~tv show_teenage mutant ninja turtles~song_crazy little thing called love~song_another brick in the wall~song_another one bites the dust~song_bette davis eyes~song_jessie's girl~song_i love rock 'n' roll~song_eye of the tiger~song_every breath you take~song_sweet dreams (are made of this)~song_total eclipse of the heart~song_when doves cry~song_what's love got to do with it~song_i just called to say i love you~song_wake me up before you go-go~song_the power of love~song_money for nothing~song_papa don't preach~song_walk like an egyptian~song_livin' on a prayer~song_i still haven't found what i'm looking for~song_never gonna give you up~song_sweet child o' mine~song_bad medicine~song_every rose has its thorn~song_like a prayer~song_wind beneath my wings~song_blame it on the rain~song_we didn't start the fire~song_another day in paradise~phrase_i'll be back~phrase_i've fallen and i can't get up~phrase_i pity the fool...~phrase_where's the beef?~phrase_pardon me, do you have any grey poupon?~phrase_whatchu talkin' 'bout, willis?~phrase_gag me with a spoon!~phrase_by the power of greyskull!~toys_rubik's cube~toys_hungry hungry hippos~toys_care bears~toys_cabbage patch kids~toys_teddy ruxpin~toys_pound puppies~toys_masters of the universe~toys_sony walkman~toys_transformers~toys_mr. potato head~toys_etch-a-sketch~toys_pez dispenser~computers_commodore 64~computers_ibm personal computer~computers_sinclair zx spectrum~computers_commodore amiga~computers_trs-80 color computer~computers_apple macintosh", "~")
-intermission_facts = split("the ancient greeks played_a game almost identical to_wheel of fortune?~wheel of fortune_is more popular_than fortnite?~wheel of fortune_has correctly predicted the_winner of every us election?~the actual wheel of fortune_weighs over four hundred_million pounds?~wheel of fortune_was originally envisioned_as a breakfast cereal?~playing wheel of fortune_has been proven to reverse_cellular degeneration?~the letter z_has never appeared_in a word puzzle?~the letter r_is more popular_than soccer?~the letter y_did not appear in writing_until 1948?~the letter e_appears in 99.89%_of all english words?", "~")
+intermission_facts = split("the ancient greeks played\na game almost identical to\nwheel of fortune?~wheel of fortune\nis more popular\nthan fortnite?~wheel of fortune\nhas correctly predicted the\nwinner of every us election?~the actual wheel of fortune\nweighs over four hundred\nmillion pounds?~wheel of fortune\nwas originally envisioned\nas a breakfast cereal?~playing wheel of fortune\nhas been proven to reverse\ncellular degeneration?~the letter z\nhas never appeared\nin a word puzzle?~the letter r\nis more popular\nthan soccer?~the letter y\ndid not appear in writing\nuntil 1948?~the letter e\nappears in 99.89%\nof all english words?", "~")
 
 __label__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
