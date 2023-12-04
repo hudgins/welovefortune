@@ -301,3 +301,28 @@ end
 -- c_snd_shake = 12
 -- c_snd_super_spin = 15
 
+-- function shake()
+--  if (w_wheel.broken) then
+--    local nudge_x, nudge_y, nudge_diff, speed = 0, 0, 0, w_wheel.speed
+--    if (w_wheel.x + w_wheel.radius >= 128 and w_wheel.break_dx == 1 or w_wheel.x - w_wheel.radius <= 0 and w_wheel.break_dx == -1) w_wheel.break_dx *= -1
+--    if (w_wheel.y + w_wheel.radius >= 128 and w_wheel.break_dy == 1 or w_wheel.y - w_wheel.radius <= 0 and w_wheel.break_dy == -1) w_wheel.break_dy *= -1
+--    nudge_x = ceil(abs(w_wheel.x - w_wheel.orig_x))
+--    nudge_y = ceil(abs(w_wheel.y - w_wheel.orig_y))
+--    nudge_diff = nudge_x - nudge_y
+--    if (nudge_diff > 5) nudge_x, nudge_y = 1, 0
+--    if (nudge_diff < -5) nudge_x, nudge_y = 0, 1
+--    if (nudge_x > 1) nudge_x = 1 
+--    if (nudge_y > 1) nudge_y = 1 
+--    w_wheel.x += flr(w_wheel.break_dx * w_wheel.speed * 0.15) + (nudge_x * w_wheel.break_dx)
+--    w_wheel.y += flr(w_wheel.break_dy * w_wheel.speed * 0.15) + (nudge_y * w_wheel.break_dy)
+--    printh(tostr(w_wheel.speed)..","..tostr(w_wheel.x)..","..tostr(w_wheel.y)..","..nudge_x..","..nudge_y)
+--    w_wheel.broken = w_wheel.x != w_wheel.orig_x or w_wheel.y != w_wheel.orig_y
+--  end
+-- function break_wheel()
+--  sfx(15)
+--  w_wheel.orig_x = w_wheel.x
+--  w_wheel.orig_y = w_wheel.y
+--  w_wheel.broken = true
+--  w_wheel.break_dx = rnd(1) > 0.5 and 1 or -1
+--  w_wheel.break_dy = rnd(1) > 0.5 and 1 or -1
+-- end

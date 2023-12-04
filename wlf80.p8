@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
-game_version = "v20231201"
+game_version = "v20231202"
 
 c_clr_theme = 10 -- 10 yellow, 9 orange
 
@@ -908,7 +908,7 @@ function restart()
 
  local function reveal_puzzle()
   toggle_theme_music(0)
-  puzzle = to_puzzle("we love fortune", "")
+  puzzle = to_puzzle("we love fortune^ -1980's^ edition", "")
   local function reveal_title()
    puzzle.revealed = true
   end
@@ -1339,13 +1339,6 @@ function shake()
  if (not shook) shakey_dakeys = {}
 end
 
-function reveal_letter(letter)
- w_letterboard.remaining[letter].available = false
- w_letterboard.remaining[letter].selected = false
-
- if (count_letter_in_puzzle(letter) > 0) reveal_puzzle_letter(letter)
-end
-
 function reveal_letters(letters, done)
  local letter_idx = 0
  local function reveal_next_letter()
@@ -1565,12 +1558,13 @@ function new_puzzle()
  puzzle = to_puzzle(puzzle_data[2], puzzle_data[1])
  puzzles_seen[puz_idx] = true
 
+ w_letterboard_init()
+
  for x in all(c_letters.symbols) do
   reveal_puzzle_letter(x)
  end
- if (bonus_mode == "solve_puzzle") reveal_letters(split("r,s,t,l,n,e"), bonus_choose_letters)
 
- w_letterboard_init()
+ if (bonus_mode == "solve_puzzle") reveal_letters(split("r,s,t,l,n,e"), bonus_choose_letters)
 end
 
 function action_spin()
