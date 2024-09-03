@@ -1162,7 +1162,7 @@ function update_actions_available(state)
   end
  end
 
- game_can_spin = not game_all_letters_revealed and not game_only_vowels_remain_in_puzzle and not game_only_vowels_remain_on_board
+ game_can_spin = bonus_mode == "spin_prize" or not game_all_letters_revealed and not game_only_vowels_remain_in_puzzle and not game_only_vowels_remain_on_board
  game_can_buy_vowel = not game_all_letters_revealed and not game_no_vowels_remain_on_board and game_active_player.round_total >= c_num_vowel_cost
 
  w_messageboard.message_displayed = false
