@@ -13,8 +13,8 @@ c_num_vowel_cost = shr(25, 16)
 -- c_money_padding = "00000" -- fri nov 24, 2023, 100,000 sats is $37.70 usd
 
 ------------ NOTES ------------
--- can't spin for some reason, why?
--- next is to 'reveal' garbage by deleting it
+-- what next?
+-- 
 -------------------------------
 
 c_letters = {
@@ -24,8 +24,9 @@ c_letters = {
  symbols = split("1_2_3_4_5_6_7_8_9_0_-_'_’_._,_?_!_%_@_#_$_&_-_(_)", "_", false),
  article_an = split("a,e,f,h,i,l,m,n,o,r,s,x"),
  ranked = {
-  letters = split("e,a,r,i,o,t,n,s,l,c,u,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
-  consonants = split("r,t,n,s,l,c,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
+--  letters = split("e,a,r,i,o,t,n,s,l,c,u,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
+--  consonants = split("r,t,n,s,l,c,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
+  consonants = split("q,j,z,x,v,k,w,y,f,b,g,h,m,p,d,c,l,s,n,t,r"),
   vowels = split("e,a,i,o,u"),
  }
 }
@@ -58,8 +59,8 @@ function screens.start_draw()
 
  if (start.display_time + 3.5 < time()) print("by allan hudgins", 32, 110, 7)
  if (start.display_time + 4.5 < time()) then
-  color(12)
-  print(" heavily-inspired by\nthe commodore 64 game", 22, 116)
+--  color(12)
+--  print(" heavily-inspired by\nthe commodore 64 game", 22, 116)
   print(game_version, 90, 0, 5)
  end
  if (start.display_time + 6 < time()) print("press x / ❎ button", 26, 100, clr_flashing(true))
@@ -464,10 +465,10 @@ function w_puzzleboard_draw()
     -- fixme remove these?
     -- c.letter = cell.letter
     -- c.revealed = cell.revealed
-    if (cell.garbage) then
-     rectfill(x, y, x + w, y + h, 9)
-     print(cell.letter, x + 2, y + 2, 0)
-    elseif (cell.removed) then
+--    if (cell.garbage) then
+--     rectfill(x, y, x + w, y + h, 9)
+--     print(cell.letter, x + 2, y + 2, 0)
+    if (cell.removed) then
      rectfill(x , y, x + w, y + h, 6)
     elseif (cell.revealed or puzzle.revealed) then
      rectfill(x, y, x + w, y + h, 7)
@@ -919,9 +920,15 @@ function restart()
 
  local function reveal_puzzle()
   toggle_theme_music(0)
-  puzzle = to_puzzle("we love fortune^ -1980's^ edition", "")
+  puzzle = to_puzzle("we love fortune", "", true)
+  local function done_reveal()
+   printh("done reveal")
+   puzzle = to_puzzle("we love fortune", "")
+   puzzle.revealed = true
+  end
   local function reveal_title()
    puzzle.revealed = true
+   reveal_letters(puzzle.garbage_letters, done_reveal)
   end
   delay(reveal_title, 0.5)
  end
@@ -1283,7 +1290,7 @@ function guess_letter(kind, letter)
 
  unflash()
  game_state = "state_revealing_letters"
- w_messageboard_set_message("is there "..article(letter).." "..letter.."?~player")
+ w_messageboard_set_message("is the "..letter.."\ngarbage?~player")
 
  local count = count_letter_in_puzzle(letter)
  if (count > 0) then
@@ -1291,10 +1298,18 @@ function guess_letter(kind, letter)
   if (kind == "consonant") winnings = w_wheel.item_value
   local function on_reveal()
    if (kind == "consonant") game_active_player.round_total += shr(winnings, 16)
-   if (count == 1) then
-    w_messageboard_set_message("there is one "..letter..".")
+   if (is_vowel(letter)) then
+    if (count == 1) then
+     w_messageboard_set_message("there is one "..letter..".")
+    else
+     w_messageboard_set_message("there are "..tostr(count).." "..letter.."'s.")
+    end
    else
-    w_messageboard_set_message("there are "..tostr(count).." "..letter.."'s.")
+    if (count == 1) then
+     w_messageboard_set_message("the "..letter.." is\nindeed garbage!")
+    else
+     w_messageboard_set_message("yes, there are \n"..tostr(count).." garbage "..letter.."'s!")
+    end
    end
   end
 
@@ -1311,7 +1326,7 @@ function guess_letter(kind, letter)
   local function cb()
    w_letterboard.remaining[letter].available = false
    w_letterboard.remaining[letter].selected = false
-   w_messageboard_set_message("sorry, no "..letter.."'s.")
+   w_messageboard_set_message("nope, the "..letter.."\nis not garbage!")
    start_shake(5, 10)
    delay(event_loseturn)
   end
@@ -1398,12 +1413,12 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter == letter) then
-    next_time += 1
+    next_time += 0.2
     queue(make_reveal(cell), next_time)
    end
   end
  end
- if (on_reveal_done) queue(on_reveal_done, next_time + 1)
+ if (on_reveal_done) queue(on_reveal_done, next_time + 0.2)
 end
 
 function event_bankrupt()
@@ -1587,7 +1602,7 @@ function new_puzzle()
   end
  end
 
- if (bonus_mode == "solve_puzzle") reveal_letters(split("r,s,t,l,n,e"), bonus_choose_letters)
+ if (bonus_mode == "solve_puzzle") reveal_letters(split("q,j,z,x,v"), bonus_choose_letters)
 
  for l in all(c_letters.letters) do
    if (not includes(puzzle.letters, l) and not is_vowel(l)) then
@@ -1879,11 +1894,13 @@ end
 -- decides how to fit a puzzle
 -- into the 11,13,13,11 grid
 -- returns it as a puzzle obj
-function to_puzzle(puzzle_letters, clue, addgarbage)
+function to_puzzle(puzzle_letters, clue, garbage)
  local puzzle, words = { clue = clue }, {}
  puzzle.solution = puzzle_letters
- puzzle_letters, garbage_letters = add_garbage(puzzle_letters)
- puzzle.garbage_letters = garbage_letters
+ if (garbage) then
+  puzzle_letters, garbage_letters = add_garbage(puzzle_letters)
+ end
+ puzzle.garbage_letters = garbage and garbage_letters or {}
  words[1] = {}
  local wordcount, inword = 0, false
  for l in all(puzzle_letters) do
