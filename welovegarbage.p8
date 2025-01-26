@@ -5,8 +5,7 @@ __lua__
 game_version = "v20231202"
 
 c_clr_theme = 10 -- 10 yellow, 9 orange
-
-c_num_vowel_cost = shr(25, 16)
+c_num_minimum_prize = shr(25, 16)
 
 -- c_sat_symbol_render = "\-f\|f\^:041f001f001f0400\n\|9\-e  "
 -- c_btc_symbol_render = "\-f\|f\^:0a1f120e121f0a00\n\|9\-e  "
@@ -14,7 +13,18 @@ c_num_vowel_cost = shr(25, 16)
 
 ------------ NOTES ------------
 -- what next?
--- 
+-- slow down the reveal during play
+-- can't buy vowels because no way to solve if they're all bought
+-- so, rip out vowel buying and from final round (?)
+-- !! make it so if you solve it, it removes all the other letters
+--    and you get whatever points you're on (or $250) for each it removes
+-- what to do about the bonus round?
+-- maybe make all the letters grey and if someone guesses a letter that is actually in the
+--   solution make it white background
+-- remove the "prior rounds totals" functionality
+-- either make the time delay before you know if you're right or not equal, or random
+-- crashes when computer wins the game because num_grand_prize doesn't exist
+   -- this bug is probably in the main game too! -- just init it to 0
 -------------------------------
 
 c_letters = {
@@ -36,6 +46,7 @@ opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the 
 mode_name = ""
 puzzle = {}
 puzzles_seen = {}
+num_grand_prize = 0
 
 wait_until = 0
 wait_callback = nil
@@ -68,8 +79,7 @@ end
 function screens.start_update()
  local start = screens.start_view
 -- fixme if (start.display_time + 6 > time()) return
--- fixme if (btnp(4) or start.display_time + 15 < time()) return screens_champions_show()
- if (btnp(5)) start_slide({ w_arches, w_puzzleboard }, "off", screens_setup_show)
+ if (btnp(5)) start_slide({ w_arches, w_puzzleboard }, "off", start_game)
 end
 
 function screens_intermission_init()
@@ -81,103 +91,62 @@ function screens_intermission_init()
   slide = "y,60,128",
  }
 end
--- function screens.intermission_draw()
---  w_arches_draw()
---  w_puzzleboard_draw()
--- 
---  local view = screens.intermission_view
---  local x0, y0, x1, y1 =
---    view.x
---  , view.y
---  , view.x + view.w
---  , view.y + view.h
--- 
---  draw_box(x0, y0, x1, y1, 12)
--- 
---  local round_name = "round "..game_round + 1
---  if (game_round == 3) round_name = "bonus round"
---  local x, y = x0 + 4, y0 + 4
---  print(round_name.." coming up!", x, y, 7)
---  color(0)
---  y += 14
---  if (view.show_scores) then
---   for player in all(game_players) do
---    local xx, yy = x + 30, y + (player.idx - 1) * 10 + 5
---    print(player.name, xx, yy)
---    print(float_to_money_str(player.game_total), xx + 29, yy)
---    line(xx - 1, yy + 6, xx + 60, yy + 6)
---   end
---  else
---    print("did you know...\n\n\n\n\n\n\n\|fit's true!", x, y)
---    print(screens.intermission_view.fact, x, y + 14)
---  end
--- end
--- function screens.intermission_update()
---  local view = screens.intermission_view
---  if (not view.fact) view.fact = rnd(intermission_facts)
---  if (view.show_scores) then
---    if (any_button()) view.show_scores = false
---  else
---    if (any_button()) then
---     local function all_off()
---      view.fact = nil
---      next_round(game_round + 1)
---     end
---     start_slide({ view }, "off", all_off)
---    end
---  end
--- end
--- function screens_intermission_show()
---  screens.intermission_view.show_scores = true
---  local function done()
---   toggle_theme_music(2)
---   screen_name = "intermission"
---   mode_name = "intermission"
---   game_state = "state_intermission"
---   start_slide({ screens.intermission_view }, "on")
---  end
---  start_slide({ w_clue, w_round, w_letterboard, w_scoreboard, w_messageboard, w_wheel }, "off", done)
--- end
-
-function screens.setup_draw()
+function screens.intermission_draw()
  w_arches_draw()
  w_puzzleboard_draw()
- w_clue_draw()
- w_letterboard_draw()
 
- local x, y = 20, 80
- local time_remaining = ceil(name_timeout - time())
- color(6)
- print("⬅️ ➡️ ⬆️ ⬇️ to select", x, y)
- print("❎ (x) to enter", x, y + 10)
- print("🅾️ (z) to undo", x, y + 20)
- if (#game_players_one.name > 1 and time_remaining > 0 and time_remaining < 3) print("starting game in... "..tostr(time_remaining), x, y + 32, 7)
-end
-function screens.setup_update()
- if (#game_players_one.name > 1 and name_timeout < time()) then
-  start_game()
- elseif (any_button()) then
-  name_timeout = time() + 4
- end
-end
-function screens_setup_show()
- screen_name = "setup"
- w_puzzleboard_init("normal")
- puzzle = to_puzzle("deener", "your name")
- puzzle.revealed = false
- game_players_one.name = ""
+ local view = screens.intermission_view
+ local x0, y0, x1, y1 =
+   view.x
+ , view.y
+ , view.x + view.w
+ , view.y + view.h
 
- local function on_pick()
-  game_players_one.name ..= w_letterboard.letter
-  insert_puzzle_guess_letter(w_letterboard.letter)
-  if (#game_players_one.name < 6) select_letter_tile_to_insert() else start_game()
+ draw_box(x0, y0, x1, y1, 12)
+
+ local round_name = "round "..game_round + 1
+ if (game_round == 3) round_name = "bonus round"
+ local x, y = x0 + 4, y0 + 4
+ print(round_name.." coming up!", x, y, 7)
+ color(0)
+ y += 14
+ if (view.show_scores) then
+  for player in all(game_players) do
+   local xx, yy = x + 30, y + (player.idx - 1) * 10 + 5
+   print(player.name, xx, yy)
+   print(float_to_money_str(player.game_total), xx + 29, yy)
+   line(xx - 1, yy + 6, xx + 60, yy + 6)
+  end
+ else
+   print("did you know...\n\n\n\n\n\n\n\|fit's true!", x, y)
+   print(screens.intermission_view.fact, x, y + 14)
  end
- local function on_undo()
-  game_players_one.name = sub(game_players_one.name, 1, #game_players_one.name - 1)
-  undo_letter_tile_insertion()
+end
+function screens.intermission_update()
+ local view = screens.intermission_view
+ if (not view.fact) view.fact = rnd(intermission_facts)
+ if (view.show_scores) then
+   if (any_button()) view.show_scores = false
+ else
+   if (any_button()) then
+    local function all_off()
+     view.fact = nil
+     next_round(game_round + 1)
+    end
+    start_slide({ view }, "off", all_off)
+   end
  end
- w_letterboard_activate("letters", on_pick, on_undo)
- start_slide({ w_clue, w_letterboard }, "on")
+end
+function screens_intermission_show()
+ screens.intermission_view.show_scores = true
+ local function done()
+  toggle_theme_music(2)
+  screen_name = "intermission"
+  mode_name = "intermission"
+  game_state = "state_intermission"
+  start_slide({ screens.intermission_view }, "on")
+ end
+ start_slide({ w_clue, w_round, w_letterboard, w_scoreboard, w_messageboard, w_wheel }, "off", done)
 end
 
 screens.round = {}
@@ -210,7 +179,6 @@ function screens.round.state_wait_action()
  update_chosen_action()
 
  if (player_chose_spin()) action_spin()
- if (player_chose_vowel()) action_vowel()
  if (player_chose_solve()) action_solve()
 end
 function screens.round.state_wait_free_spin()
@@ -282,20 +250,6 @@ function action_consonant()
   guess_letter("consonant", cpu_player_guess_letter("consonants"))
  end
 end
-function action_vowel()
- if (not game_can_buy_vowel) return
-
- w_messageboard_set_message("i'd like to\nbuy a vowel!~player")
- if (game_active_player.human) then
-  local function on_pick()
-   mode_name = ""
-   guess_letter("vowel")
-  end
-  w_letterboard_activate("vowels", on_pick)
- else
-  guess_letter("vowel", cpu_player_guess_letter("vowels"))
- end
-end
 
 function bonus_choose_letters()
  game_state = "state_bonus_letters"
@@ -338,49 +292,6 @@ function bonus_choose_letters()
  end
  w_letterboard_activate("consonants", on_pick, on_undo)
 end
-
--- function screens_champions_init()
---  screens.champions_view = {
---   x = 0,
---   y = 0,
---   w = 127,
---   h = 127
---  }
--- end
--- function screens.champions_draw()
---  local view = screens.champions_view
---  local x0, y0, x1, y1 =
---    view.x
---  , view.y
---  , view.x + view.w
---  , view.y + view.h
---  draw_box(x0, y0, x1, y1, c_clr_theme)
---  x0 += 10
---  y0 += 10
---  print("champions", x0 + 36, y0)
---  line(x0 + 36, y0 + 6, x0 + 70, y0 + 6)
---  x0 += 10
---  y0 += 15
---  for i=1,#champions_list do
---   if (view.display_time + i * 0.1 > time()) break
---   local name = champions_list[i].name
---   local score = float_to_money_str(champions_list[i].score)
---   local name_colour = name == game_active_player.name and clr_flashing(true, 0, c_clr_theme) or 0
---   print(i..". "..name, x0, y0, name_colour)
---   print(score, x0 + 80 - (#score * 4), y0)
---   y0 += 8
---  end
---  print("press x / ❎ button", 26, 100)
--- end
--- function screens.champions_update()
---  if (screens.champions_view.display_time + 10 < time() or any_button()) restart()
--- end
--- function screens_champions_show()
---  toggle_theme_music(0)
---  screens.champions_view.display_time = time()
---  screen_name = "champions"
---  save_champs()
--- end
 
 function w_arches_init()
  w_arches = {
@@ -837,46 +748,9 @@ function w_round_draw()
  if (game_round == 4) print("   bonus", x, y + 2, 12) else print("     r-"..game_round, x, y + 2, 12) 
 end
 
--- max 8
-champions_list = {}
-
 function _init()
  cartdata("wob_cart_data_v2")
- load_champs()
  restart()
-end
-
-function load_champs()
- local entry_width = 7
- for entry=0,7 do -- 8 entries
-  local current_name = ""
-  for offset=0,5 do -- 6 letters per name
-   local char = chr(dget(entry * entry_width + offset))
-   if (ord(char) != 0) current_name ..= char
-  end
-  if (current_name != "") champions_list[entry + 1] = { name = current_name, score = dget(entry * 7 + 6) }
- end
- -- if champions list is empty, fill it with defaults
- if (not champions_list[1]) then
-  for i=1,8 do
-   champions_list[i] = { name = split(opponents[i], "_")[1], score = shr(340 - i * 40, 16) }
-  end
- end
-end
-
-function save_champs()
- for i=0,63 do
-  dset(i, 0)
- end
- local start = 0
- for entry in all(champions_list) do
-  for i=1,6 do
-   dset(start, ord(entry.name, i) or 0)
-   start += 1
-  end
-  dset(start, entry.score)
-  start += 1
- end
 end
 
 function restart()
@@ -895,7 +769,7 @@ function restart()
  game_all_letters_revealed = false
  game_can_spin = true
  game_can_buy_vowel = false
- game_players_one = create_player(1, "")
+ game_players_one = create_player(1, "player")
  game_players_cpu1 = create_player(2)
  game_players_cpu2 = create_player(3)
  game_players = { game_players_one, game_players_cpu1, game_players_cpu2 }
@@ -916,13 +790,12 @@ function restart()
 
  screens_start_init()
  screens_intermission_init()
- -- screens_champions_init()
 
  local function reveal_puzzle()
   toggle_theme_music(0)
   puzzle = to_puzzle("we love fortune", "", true)
   local function done_reveal()
-   printh("done reveal")
+   -- printh("done reveal")
    puzzle = to_puzzle("we love fortune", "")
    puzzle.revealed = true
   end
@@ -1081,6 +954,7 @@ function cpu_player_guess_puzzle()
  w_letterboard.remaining[w_letterboard.letter].selected = false
  sfx(9)
  local all_done, actual_letter = insert_puzzle_guess_letter("*")
+ -- printh("all_done: "..tostr(all_done)..", actual_letter: "..tostr(actual_letter))
  w_letterboard.letter = actual_letter
  w_letterboard.remaining[w_letterboard.letter].selected = true
  if (all_done) puzzle_guess_letter("*") else delay(cpu_player_guess_puzzle, rnd(0.25) + 0.05)
@@ -1135,13 +1009,16 @@ function puzzle_guess_letter(letter, custom_handling)
  if (all_done) then
   correct = check_puzzle_correctness()
   if (correct) then
-   game_state = "state_won"
-   puzzle.revealed = true
-   sfx(6)
-   if (custom_handling) return all_done, correct
+   function done_reveal(garbage_revealed)
+    game_state = "state_won"
+    puzzle.revealed = true
+    sfx(6)
+    if (custom_handling) return all_done, correct
 
-   w_messageboard_set_message("congratulations!\nthat's correct!")
-   delay(end_round)
+    w_messageboard_set_message("congratulations!\nthat's correct!")
+    delay(end_round)
+   end
+   reveal_letters(puzzle.garbage_letters, done_reveal, "solving")
   else
    start_shake()
    if (custom_handling) return all_done, correct
@@ -1181,7 +1058,7 @@ function update_actions_available(state)
  end
 
  game_can_spin = bonus_mode == "spin_prize" or not game_all_letters_revealed and not game_only_vowels_remain_in_puzzle and not game_only_vowels_remain_on_board
- game_can_buy_vowel = not game_all_letters_revealed and not game_no_vowels_remain_on_board and game_active_player.round_total >= c_num_vowel_cost
+ game_can_buy_vowel = false
 
  w_messageboard.message_displayed = false
  w_messageboard.choices = {}
@@ -1316,8 +1193,6 @@ function guess_letter(kind, letter)
   local function on_reveal_done()
    w_letterboard.remaining[letter].available = false
    w_letterboard.remaining[letter].selected = false
-   if (kind == "vowel") game_active_player.round_total -= c_num_vowel_cost
-
    delay(update_actions_available)
   end
 
@@ -1366,17 +1241,22 @@ function shake()
  if (not shook) shakey_dakeys = {}
 end
 
-function reveal_letters(letters, done)
+function reveal_letters(letters, done, action)
+ local total_revealed = 0
  local letter_idx = 0
  local function reveal_next_letter()
   letter_idx += 1
   local letter = letters[letter_idx]
-  if (not letter) return done()
+  if (not letter) return done(total_revealed)
 
   w_letterboard.remaining[letter].available = false
   w_letterboard.remaining[letter].selected = false
   local count = count_letter_in_puzzle(letter)
-  if (count > 0) reveal_puzzle_letter(letter, nil, reveal_next_letter) else reveal_next_letter()
+  total_revealed += count
+  function add_money()
+    game_active_player.round_total += shr(w_wheel.item_value or c_num_minimum_prize, 16)
+  end
+  if (count > 0) reveal_puzzle_letter(letter, add_money, reveal_next_letter) else reveal_next_letter()
  end
  reveal_next_letter()
 end
@@ -1450,8 +1330,8 @@ end
 
 function end_round()
  w_letterboard.remaining[w_letterboard.letter].selected = false
- if (game_active_player.round_total < c_num_vowel_cost) game_active_player.round_total = c_num_vowel_cost
  game_active_player.game_total += game_active_player.round_total
+ if (game_active_player.round_total < c_num_minimum_prize) game_active_player.round_total = c_num_minimum_prize
 
  screens_intermission_show()
 end
@@ -1518,17 +1398,6 @@ function start_bonus_round()
  start_slide({ w_wheel, w_messageboard }, "off", done)
 end
 
-function remove_champion(name)
- local remove_player = false
- for i=1,#champions_list do
-  if (champions_list[i].name == name) remove_player = true
-  if (remove_player) champions_list[i] = champions_list[i+1]
- end
- for i=1,#champions_list do
-  if (champions_list[i].name == "") champions_list[i] = nil
- end
-end
-
 function end_game()
  mode_name = ""
  if (game_state == "state_won") game_active_player.game_total += num_grand_prize
@@ -1536,47 +1405,7 @@ function end_game()
   puzzle.revealed = true
   w_bonusboard.lines[3] = float_to_money_str(game_active_player.game_total).." grand total"
  end
-
- for player in all(game_players) do
-  if (player != game_active_player) remove_champion(player.name)
- end
-
- local existing_player = false
- for i=1,#champions_list do
-  if (champions_list[i].name == game_active_player.name) then
-   champions_list[i].score += game_active_player.game_total
-   existing_player = true
-  end
- end
- if (not existing_player) then
-  if (#champions_list < 8) then
-   champions_list[#champions_list + 1] = { name = game_active_player.name, score = game_active_player.game_total }
-  else
-   for i=1,#champions_list do
-    if (game_active_player.game_total > champions_list[i].score) then
-     for j=#champions_list,i+1,-1 do
-      champions_list[j] = champions_list[j-1]
-     end
-     champions_list[i] = { name = game_active_player.name, score = game_active_player.game_total }
-     break
-    end
-   end
-  end
- end
-
- local unsorted = true
- while (unsorted) do
-  unsorted = false
-  for i=1,#champions_list-1 do
-   if (champions_list[i].score < champions_list[i+1].score) then
-    unsorted = true
-    local tmp = champions_list[i]
-    champions_list[i] = champions_list[i+1]
-    champions_list[i+1] = tmp
-   end
-  end
- end
- delay(screens_champions_show, 4)
+ delay(restart, 4)
 end
 
 function new_puzzle()
@@ -1671,7 +1500,7 @@ function action_solve_deferred(is_bonus_round, on_all_correct_fn, on_all_incorre
     select_letter_tile_to_insert()
    end
   end
-  w_letterboard_activate("letters", on_pick, undo_letter_tile_insertion)
+  w_letterboard_activate("vowels", on_pick, undo_letter_tile_insertion)
  else
   cpu_player_guess_puzzle()
  end
@@ -1862,16 +1691,16 @@ function add_garbage(puzzle_letters)
  end
  local garbage_amount = 48 - #garbage_puzzle
  local garbage_letters = ""
- printh("amount of garbage: "..garbage_amount)
+ -- printh("amount of garbage: "..garbage_amount)
  while (garbage_amount > 0) do
   local garbage = rnd(garbage_letter_options)
   if (not includes(garbage_letters, garbage)) garbage_letters ..= garbage
   local place = ceil(rnd(#garbage_puzzle))
-  printh("place of garbage: "..place)
+  -- printh("place of garbage: "..place)
   local i = 1
   garbage_puzzle_temp = ""
   for l in all(garbage_puzzle) do
-    printh("letter: "..l)
+    -- printh("letter: "..l)
     if (i == place) garbage_puzzle_temp ..= garbage
     garbage_puzzle_temp ..= l
     i += 1
