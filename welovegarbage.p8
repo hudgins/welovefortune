@@ -13,17 +13,14 @@ c_num_minimum_prize = shr(25, 16)
 
 ------------ NOTES ------------
 -- what next?
--- slow down the reveal during play
--- can't buy vowels because no way to solve if they're all bought
--- so, rip out vowel buying and from final round (?)
+-- rip out vowels from final round
+-- TODO working on bonus round now
 -- !! make it so if you solve it, it removes all the other letters
 --    and you get whatever points you're on (or $250) for each it removes
--- what to do about the bonus round?
 -- maybe make all the letters grey and if someone guesses a letter that is actually in the
 --   solution make it white background
--- remove the "prior rounds totals" functionality
--- either make the time delay before you know if you're right or not equal, or random
 -- crashes when computer wins the game because num_grand_prize doesn't exist
+   -- fixed
    -- this bug is probably in the main game too! -- just init it to 0
 -------------------------------
 
@@ -239,7 +236,7 @@ function screens.round.state_spin_completed()
  end
 end
 function action_consonant()
- w_messageboard_set_message("choose a letter.")
+ w_messageboard_set_message("find a garbage\nletter.")
  if (game_active_player.human) then
   local function on_pick()
    mode_name = ""
@@ -539,20 +536,8 @@ function w_scoreboard_draw()
    pset(x0 + 30 - 2 + (side * -26), y0 + (player.idx * 10) + 2 - slot)
   end
 
-  -- alternate showing round/game totals
-  local total_to_show = "round_total"
-  if (game_round > 1 and
-      game_state == "state_wait_action" and
-      game_active_player == game_players_one and
-      time_since_input + 5 < time()) then
-   total_to_show = "game_total"
-   if (player.idx == 1) print("prior", x0 + 4, y0 + (player.idx - 1) * 10 + 5)
-   if (player.idx == 2) print("rounds", x0 + 4, y0 + (player.idx - 1) * 10 + 5)
-   if (player.idx == 3) print("totals", x0 + 4, y0 + (player.idx - 1) * 10 + 5)
-  else
-   print(player.name, x0 + 4, y0 + (player.idx - 1) * 10 + 5)
-  end
-  print(float_to_money_str(player[total_to_show]), x0 + 33, y0 + (player.idx -1 ) * 10 + 5)
+  print(player.name, x0 + 4, y0 + (player.idx - 1) * 10 + 5)
+  print(float_to_money_str(player.round_total), x0 + 33, y0 + (player.idx -1 ) * 10 + 5)
  end
 end
 
@@ -1171,32 +1156,35 @@ function guess_letter(kind, letter)
 
  local count = count_letter_in_puzzle(letter)
  if (count > 0) then
-  local winnings = 0
-  if (kind == "consonant") winnings = w_wheel.item_value
-  local function on_reveal()
-   if (kind == "consonant") game_active_player.round_total += shr(winnings, 16)
-   if (is_vowel(letter)) then
-    if (count == 1) then
-     w_messageboard_set_message("there is one "..letter..".")
+  function cb()
+   local winnings = 0
+   if (kind == "consonant") winnings = w_wheel.item_value
+   local function on_reveal()
+    if (kind == "consonant") game_active_player.round_total += shr(winnings, 16)
+    if (is_vowel(letter)) then
+     if (count == 1) then
+      w_messageboard_set_message("there is one "..letter..".")
+     else
+      w_messageboard_set_message("there are "..tostr(count).." "..letter.."'s.")
+     end
     else
-     w_messageboard_set_message("there are "..tostr(count).." "..letter.."'s.")
-    end
-   else
-    if (count == 1) then
-     w_messageboard_set_message("the "..letter.." is\nindeed garbage!")
-    else
-     w_messageboard_set_message("yes, there are \n"..tostr(count).." garbage "..letter.."'s!")
+     if (count == 1) then
+      w_messageboard_set_message("the "..letter.." is\nindeed garbage!")
+     else
+      w_messageboard_set_message("yes, the "..tostr(count).." "..letter.."'s\nare garbage!")
+     end
     end
    end
-  end
 
-  local function on_reveal_done()
-   w_letterboard.remaining[letter].available = false
-   w_letterboard.remaining[letter].selected = false
-   delay(update_actions_available)
-  end
+   local function on_reveal_done()
+    w_letterboard.remaining[letter].available = false
+    w_letterboard.remaining[letter].selected = false
+    delay(update_actions_available)
+   end
 
-  reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
+   reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
+  end
+  delay(cb)
  else
   local function cb()
    w_letterboard.remaining[letter].available = false
@@ -1276,6 +1264,10 @@ function count_letter_in_puzzle(letter)
 end
 
 function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
+ local inc = 1
+ if (screen_name == "start") then
+  inc = 0.2
+ end
  local next_time = time()
  local function make_reveal(cell)
   local function reveal()
@@ -1285,7 +1277,7 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
      cell.removed = true
    end
    cell.revealed = true
-   sfx(2)
+   if (inc == 1) sfx(2)
    if (on_reveal) on_reveal()
   end
   return reveal
@@ -1293,12 +1285,12 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter == letter) then
-    next_time += 0.2
+    next_time += inc
     queue(make_reveal(cell), next_time)
    end
   end
  end
- if (on_reveal_done) queue(on_reveal_done, next_time + 0.2)
+ if (on_reveal_done) queue(on_reveal_done, next_time + inc)
 end
 
 function event_bankrupt()
@@ -1392,7 +1384,7 @@ end
 function start_bonus_round()
  local function done()
   bonus_mode = "solve_puzzle"
-  w_bonusboard.lines = split("      bonus round^^we give you:^  r s t l n^and^  e", "^")
+  w_bonusboard.lines = split("      bonus round^^we give you:^  q j z x v and k", "^")
   start_slide({ w_clue, w_round, w_letterboard, w_bonusboard }, "on", new_puzzle)
  end
  start_slide({ w_wheel, w_messageboard }, "off", done)
@@ -1431,7 +1423,7 @@ function new_puzzle()
   end
  end
 
- if (bonus_mode == "solve_puzzle") reveal_letters(split("q,j,z,x,v"), bonus_choose_letters)
+ if (bonus_mode == "solve_puzzle") reveal_letters(split("q,j,z,x,v,k"), bonus_choose_letters)
 
  for l in all(c_letters.letters) do
    if (not includes(puzzle.letters, l) and not is_vowel(l)) then
