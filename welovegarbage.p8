@@ -22,6 +22,14 @@ c_num_minimum_prize = shr(25, 16)
 -- crashes when computer wins the game because num_grand_prize doesn't exist
    -- fixed
    -- this bug is probably in the main game too! -- just init it to 0
+--
+-- okay here's the problem:
+-- updating the board while it is being modified doesn't work because the cells that
+-- are being referenced in the queued actions are no longer puzzle.tiles assigned, so
+-- nothing done to them matters
+-- solution might be to reuse all the cells instead of throwing them away
+-- this shouldn't be impossible? :grimace:
+-- maybe make sure to wipe them at the end of every round though, or on to_puzzle() I guess
 -------------------------------
 
 c_letters = {
@@ -780,13 +788,14 @@ function restart()
   toggle_theme_music(0)
   puzzle = to_puzzle("we love fortune", "", true)
   local function done_reveal()
-   -- printh("done reveal")
-   puzzle = to_puzzle("we love fortune", "")
-   puzzle.revealed = true
+   function cb()
+    puzzle = to_puzzle("we love fortune", "")
+    puzzle.revealed = true
+   end
+   delay(cb)
   end
   local function reveal_title()
-   puzzle.revealed = true
-   reveal_letters(puzzle.garbage_letters, done_reveal)
+   reveal_letters(puzzle.garbage_letters.."aeiou", done_reveal)
   end
   delay(reveal_title, 0.5)
  end
@@ -820,7 +829,9 @@ function delay(cb, factor)
  end
 end
 
-function queue(fn, on_time)
+function queue(fn, on_time, name)
+ if (not name) name = "unnamed"
+ printh("queuing: "..name)
  add(event_queue, { run = fn, time = on_time })
 end
 
@@ -1003,7 +1014,7 @@ function puzzle_guess_letter(letter, custom_handling)
     w_messageboard_set_message("congratulations!\nthat's correct!")
     delay(end_round)
    end
-   reveal_letters(puzzle.garbage_letters, done_reveal, "solving")
+   reveal_letters(puzzle.garbage_letters, done_reveal)
   else
    start_shake()
    if (custom_handling) return all_done, correct
@@ -1132,6 +1143,14 @@ function insert_puzzle_guess_letter(letter)
  return all_done, letter
 end
 
+function filter_out(the_string, the_letter)
+ local the_filtered_string = ""
+ for l in all (the_string) do
+  if (l != the_letter) the_filtered_string ..= l
+ end
+ return the_filtered_string
+end
+
 function includes(the_string, the_letter)
  for l in all (the_string) do
   if (l == the_letter) return true
@@ -1229,7 +1248,7 @@ function shake()
  if (not shook) shakey_dakeys = {}
 end
 
-function reveal_letters(letters, done, action)
+function reveal_letters(letters, done)
  local total_revealed = 0
  local letter_idx = 0
  local function reveal_next_letter()
@@ -1263,12 +1282,16 @@ function count_letter_in_puzzle(letter)
  return count
 end
 
+function adjust_tiles()
+ puzzle.words = to_words(from_tiles())
+ puzzle.tiles = to_tiles(puzzle, puzzle.garbage_letters)
+end
+
 function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
- local inc = 1
- if (screen_name == "start") then
-  inc = 0.2
- end
  local next_time = time()
+ local inc = 1
+ if (screen_name == "start") inc = 0.2
+
  local function make_reveal(cell)
   local function reveal()
    if (cell.garbage) then
@@ -1282,6 +1305,7 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
   end
   return reveal
  end
+
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter == letter) then
@@ -1290,7 +1314,11 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
    end
   end
  end
- if (on_reveal_done) queue(on_reveal_done, next_time + inc)
+ function fix_and_done()
+  adjust_tiles()
+  if (on_reveal_done) on_reveal_done()
+ end
+ queue(fix_and_done, next_time + inc)
 end
 
 function event_bankrupt()
@@ -1417,6 +1445,7 @@ function new_puzzle()
 
  w_letterboard_init()
 
+-- fixme remove this?
  for row in all(puzzle.tiles) do
   for cell in all(row) do
    if (not is_vowel(cell.letter)) cell.revealed = true
@@ -1716,12 +1745,21 @@ end
 -- into the 11,13,13,11 grid
 -- returns it as a puzzle obj
 function to_puzzle(puzzle_letters, clue, garbage)
- local puzzle, words = { clue = clue }, {}
+ local puzzle = { clue = clue }
  puzzle.solution = puzzle_letters
  if (garbage) then
   puzzle_letters, garbage_letters = add_garbage(puzzle_letters)
  end
  puzzle.garbage_letters = garbage and garbage_letters or {}
+
+ puzzle.letters = puzzle_letters
+ puzzle.words = to_words(puzzle_letters)
+ puzzle.tiles = to_tiles(puzzle, garbage_letters)
+ return puzzle
+end
+
+function to_words(puzzle_letters)
+ local words = {}
  words[1] = {}
  local wordcount, inword = 0, false
  for l in all(puzzle_letters) do
@@ -1737,13 +1775,7 @@ function to_puzzle(puzzle_letters, clue, garbage)
   end
  end
 
- wordcount += 1
-
- puzzle.letters = puzzle_letters
- puzzle.words = words
- puzzle.wordcount = wordcount
- puzzle.tiles = to_tiles(puzzle, garbage_letters)
- return puzzle
+ return words
 end
 
 function to_tiles(puz, garbage)
@@ -1774,7 +1806,9 @@ function to_tiles(puz, garbage)
      force_next_line = true
      break
     end
-    tiles[row][rowcol+i] = { letter = l, garbage = includes(garbage, l) }
+    local is_garbage = includes(garbage, l)
+    local is_revealed = not is_vowel(l)
+    tiles[row][rowcol+i] = { letter = l, garbage = is_garbage, revealed = is_revealed }
     i += 1
    end
    tiles[row][rowcol+i] = { letter = nil, garbage = false }
@@ -1816,6 +1850,22 @@ function to_tiles(puz, garbage)
  end
 
  return tiles
+end
+
+function from_tiles()
+ puz = ""
+ for row in all(puzzle.tiles) do
+  for cell in all(row) do
+   if (cell.letter and not cell.removed) then
+    puz ..= cell.letter
+   end
+  end
+  puz ..= " "
+ end
+ while (puz[#puz] == " ") do
+  puz = sub(puz, 1, #puz - 1)
+ end
+ return puz
 end
 
 function get_line_len(line)
