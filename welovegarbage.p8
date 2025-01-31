@@ -12,24 +12,15 @@ c_num_minimum_prize = shr(25, 16)
 -- c_money_padding = "00000" -- fri nov 24, 2023, 100,000 sats is $37.70 usd
 
 ------------ NOTES ------------
--- what next?
--- rip out vowels from final round
 -- TODO working on bonus round now
--- !! make it so if you solve it, it removes all the other letters
---    and you get whatever points you're on (or $250) for each it removes
+-- on solving, need to leave the revealed/guessed vowels revealed
+-- they are guessed letters, but how do I keep them in their places while wiping the tiles?
 -- maybe make all the letters grey and if someone guesses a letter that is actually in the
 --   solution make it white background
 -- crashes when computer wins the game because num_grand_prize doesn't exist
    -- fixed
    -- this bug is probably in the main game too! -- just init it to 0
 --
--- okay here's the problem:
--- updating the board while it is being modified doesn't work because the cells that
--- are being referenced in the queued actions are no longer puzzle.tiles assigned, so
--- nothing done to them matters
--- solution might be to reuse all the cells instead of throwing them away
--- this shouldn't be impossible? :grimace:
--- maybe make sure to wipe them at the end of every round though, or on to_puzzle() I guess
 -------------------------------
 
 c_letters = {
@@ -46,7 +37,7 @@ c_letters = {
  }
 }
 
-opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the moon_poopy diaper_special_stomach upset~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_number go up_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poop_great_feeling sleepy~wanda_8_go go go_bummer_sweet_climate change~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!\nno whammies_darn_hooray_covid-19", "~")
+opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the moon_poopy diaper_special_stomach upset~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_wheel go now_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poop_great_feeling sleepy~wanda_8_go go go_bummer_sweet_climate change~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!\nno whammies_darn_hooray_covid-19", "~")
 
 mode_name = ""
 puzzle = {}
@@ -74,16 +65,12 @@ function screens.start_draw()
  w_puzzleboard_draw()
 
  if (start.display_time + 3.5 < time()) print("by allan hudgins", 32, 110, 7)
- if (start.display_time + 4.5 < time()) then
---  color(12)
---  print(" heavily-inspired by\nthe commodore 64 game", 22, 116)
-  print(game_version, 90, 0, 5)
- end
- if (start.display_time + 6 < time()) print("press x / ❎ button", 26, 100, clr_flashing(true))
+ if (start.display_time + 4.5 < time()) print(game_version, 90, 0, 5)
+ if (start.display_time + 17 < time()) print("press x / ❎ button", 26, 100, clr_flashing(true))
 end
 function screens.start_update()
  local start = screens.start_view
--- fixme if (start.display_time + 6 > time()) return
+ if (start.display_time + 17 > time()) return
  if (btnp(5)) start_slide({ w_arches, w_puzzleboard }, "off", start_game)
 end
 
@@ -270,15 +257,8 @@ function bonus_choose_letters()
      = w_bonusboard.lines[w_bonusboard.consonant_line]..(w_bonusboard.letters[i] or "_").." "
    end
    w_letterboard.list = "consonants"
-  else
-   w_bonusboard.vowels += 1
-   add(w_bonusboard.letters, letter)
-   w_bonusboard.lines[w_bonusboard.vowel_line] = letter
   end
-  if (w_bonusboard.consonants == 3 and w_bonusboard.vowels == 0) then
-   w_letterboard.list = "vowels"
-   w_bonusboard.idx = 7
-  elseif (w_bonusboard.vowels == 1) then
+  if (w_bonusboard.consonants == 3) then
    mode_name = ""
    w_bonusboard.lines = split(",let's see how you did!")
    reveal_letters(w_bonusboard.letters, action_solve)
@@ -1008,9 +988,11 @@ function puzzle_guess_letter(letter, custom_handling)
    function done_reveal(garbage_revealed)
     game_state = "state_won"
     puzzle.revealed = true
+    adjust_tiles()
     sfx(6)
     if (custom_handling) return all_done, correct
 
+   -- todo show early-solve winnings in message?
     w_messageboard_set_message("congratulations!\nthat's correct!")
     delay(end_round)
    end
@@ -1261,7 +1243,9 @@ function reveal_letters(letters, done)
   local count = count_letter_in_puzzle(letter)
   total_revealed += count
   function add_money()
-    game_active_player.round_total += shr(w_wheel.item_value or c_num_minimum_prize, 16)
+    local winnings = c_num_minimum_prize
+    if (w_wheel.item_value > 0) winnings = shr(w_wheel.item_value, 16)
+    game_active_player.round_total += winnings
   end
   if (count > 0) reveal_puzzle_letter(letter, add_money, reveal_next_letter) else reveal_next_letter()
  end
@@ -1283,7 +1267,11 @@ function count_letter_in_puzzle(letter)
 end
 
 function adjust_tiles()
- puzzle.words = to_words(from_tiles())
+ if (puzzle.revealed) then
+  puzzle.words = to_words(puzzle.solution)
+ else
+  puzzle.words = to_words(from_tiles())
+ end
  puzzle.tiles = to_tiles(puzzle, puzzle.garbage_letters)
 end
 
@@ -1315,7 +1303,7 @@ function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
   end
  end
  function fix_and_done()
-  adjust_tiles()
+  if (not is_vowel(letter)) adjust_tiles()
   if (on_reveal_done) on_reveal_done()
  end
  queue(fix_and_done, next_time + inc)
@@ -1479,7 +1467,7 @@ function action_solve()
    sfx(6)
    game_state = "state_won"
    w_bonusboard.lines = split("    congratulations!,,,,,")
-   delay(end_game)
+   reveal_letters(puzzle.garbage_letters, end_game)
   end
   local function on_all_incorrect()
    w_bonusboard.lines = split("wrong!,too bad.,,,,")
