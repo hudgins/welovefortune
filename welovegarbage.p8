@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
-game_version = "v20231202"
+game_version = "v20230203"
 
 c_clr_theme = 10 -- 10 yellow, 9 orange
 c_num_minimum_prize = shr(25, 16)
@@ -40,7 +40,7 @@ c_letters = {
 opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the moon_poopy diaper_special_stomach upset~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_wheel go now_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poop_great_feeling sleepy~wanda_8_go go go_bummer_sweet_climate change~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!\nno whammies_darn_hooray_covid-19", "~")
 
 mode_name = ""
-puzzle = {}
+the_puzzle = {}
 puzzles_seen = {}
 num_grand_prize = 0
 
@@ -245,7 +245,7 @@ end
 
 function bonus_choose_letters()
  game_state = "state_bonus_letters"
- w_bonusboard.lines = split("for the "..float_to_money_str(num_grand_prize).." "..w_wheel.item_name.."^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
+ w_bonusboard.lines = split("for the "..float_to_money_str(num_grand_prize).." "..w_wheel.item_name.."^^choose 3 consonants:^_ _ _^ ^ ", "^")
  local function on_pick()
   local letter = w_letterboard.letter
   if (w_bonusboard.consonants < 3) then
@@ -355,8 +355,8 @@ function w_puzzleboard_draw()
   end
 
   rectfill(x, y, x + w, y + h, 3)
-  if (#puzzle.tiles[row] >= col) then
-   local cell = puzzle.tiles[row][col]
+  if (#the_puzzle.tiles[row] >= col) then
+   local cell = the_puzzle.tiles[row][col]
    if (cell.letter) then
     -- fixme remove these?
     -- c.letter = cell.letter
@@ -366,7 +366,7 @@ function w_puzzleboard_draw()
 --     print(cell.letter, x + 2, y + 2, 0)
     if (cell.removed) then
      rectfill(x , y, x + w, y + h, 6)
-    elseif (cell.revealed or puzzle.revealed) then
+    elseif (cell.revealed or the_puzzle.revealed) then
      rectfill(x, y, x + w, y + h, 7)
      print(cell.letter, x + 2, y + 2, 0)
     elseif (cell.selected) then
@@ -705,7 +705,7 @@ end
 function w_clue_draw()
  local x, y = w_clue.x, w_clue.y
  rectfill(x - 2, y, x + 128, y + 8, 0)
- print("clue: "..puzzle.clue, x, y + 2, c_clr_theme)
+ print("clue: "..the_puzzle.clue, x, y + 2, c_clr_theme)
 end
 
 function w_round_init()
@@ -749,7 +749,7 @@ function restart()
  game_active_player = game_players_one
  game_cpu_delay = 0
 
- puzzle = to_puzzle("", "")
+ the_puzzle = to_puzzle("", "")
 
  w_arches_init()
  w_puzzleboard_init()
@@ -766,16 +766,16 @@ function restart()
 
  local function reveal_puzzle()
   toggle_theme_music(0)
-  puzzle = to_puzzle("we love fortune", "", true)
+  the_puzzle = to_puzzle("we love fortune", "", true)
   local function done_reveal()
    function cb()
-    puzzle = to_puzzle("we love fortune", "")
-    puzzle.revealed = true
+    the_puzzle = to_puzzle("we love fortune", "")
+    the_puzzle.revealed = true
    end
-   delay(cb)
+   delay(cb, 0.5)
   end
   local function reveal_title()
-   reveal_letters(puzzle.garbage_letters.."aeiou", done_reveal)
+   reveal_letters(the_puzzle.garbage_letters.."aeiou", done_reveal)
   end
   delay(reveal_title, 0.5)
  end
@@ -809,9 +809,7 @@ function delay(cb, factor)
  end
 end
 
-function queue(fn, on_time, name)
- if (not name) name = "unnamed"
- printh("queuing: "..name)
+function queue(fn, on_time)
  add(event_queue, { run = fn, time = on_time })
 end
 
@@ -880,7 +878,7 @@ function cpu_player_choose_action()
  local choice = "solve"
  local count = count_letter_in_puzzle("*")
  -- if not many letters remaining
- if (count < #puzzle.letters / 4) then
+ if (count < #the_puzzle.letters / 4) then
   -- and player will be in the lead
   if (game_active_player.game_total + game_active_player.round_total > other_cpu.game_total) then
    choice = "solve"
@@ -987,16 +985,17 @@ function puzzle_guess_letter(letter, custom_handling)
   if (correct) then
    function done_reveal(garbage_revealed)
     game_state = "state_won"
-    puzzle.revealed = true
+    the_puzzle.revealed = true
     adjust_tiles()
     sfx(6)
-    if (custom_handling) return all_done, correct
+    if (custom_handling) return
 
    -- todo show early-solve winnings in message?
     w_messageboard_set_message("congratulations!\nthat's correct!")
     delay(end_round)
    end
-   reveal_letters(puzzle.garbage_letters, done_reveal)
+   the_puzzle.vowels_revealed = true
+   reveal_letters(the_puzzle.garbage_letters, done_reveal)
   else
    start_shake()
    if (custom_handling) return all_done, correct
@@ -1026,7 +1025,7 @@ function update_actions_available(state)
   end
  end
 
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter and (not cell.revealed or cell.garbage)) then
     game_all_letters_revealed = false
@@ -1053,14 +1052,14 @@ end
 
 function check_puzzle_correctness()
  local correct = true
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.guessed_letter and cell.guessed_letter != cell.letter) correct = false
   end
  end
 
  -- unguess or reveal all
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter) then
     cell.guessed_letter, cell.selected = nil, false
@@ -1072,7 +1071,7 @@ function check_puzzle_correctness()
 end
 
 function select_letter_tile_to_insert()
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    cell.selected = false
    if (cell.letter and not cell.revealed and not cell.guessed_letter) then
@@ -1085,7 +1084,7 @@ end
 
 function undo_letter_tile_insertion()
  local prev = nil
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.selected) then
     cell.selected, cell.guessed_letter = false, nil
@@ -1101,7 +1100,7 @@ end
 
 function insert_puzzle_guess_letter(letter)
  local done = false
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   if (done) break
   for cell in all(row) do
    if (cell.letter and not cell.revealed and not cell.guessed_letter) then
@@ -1116,7 +1115,7 @@ function insert_puzzle_guess_letter(letter)
  end
 
  local all_done = true
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter and not cell.revealed and not cell.guessed_letter) return false, letter
   end
@@ -1178,11 +1177,11 @@ function guess_letter(kind, letter)
    end
 
    local function on_reveal_done()
-    w_letterboard.remaining[letter].available = false
-    w_letterboard.remaining[letter].selected = false
     delay(update_actions_available)
    end
 
+   w_letterboard.remaining[letter].available = false
+   w_letterboard.remaining[letter].selected = false
    reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
   end
   delay(cb)
@@ -1254,7 +1253,7 @@ end
 
 function count_letter_in_puzzle(letter)
  local count = 0
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
     if (cell.letter) then
 --      printh("cell:"..cell.letter..","..tostr(cell.garbage)..","..tostr(cell.revealed))
@@ -1267,34 +1266,37 @@ function count_letter_in_puzzle(letter)
 end
 
 function adjust_tiles()
- if (puzzle.revealed) then
-  puzzle.words = to_words(puzzle.solution)
+ if (the_puzzle.revealed) then
+  the_puzzle.words = to_words(the_puzzle.solution)
  else
-  puzzle.words = to_words(from_tiles())
+  the_puzzle.words = to_words(from_tiles())
  end
- puzzle.tiles = to_tiles(puzzle, puzzle.garbage_letters)
+ the_puzzle.tiles = to_tiles(the_puzzle, the_puzzle.garbage_letters)
 end
 
 function reveal_puzzle_letter(letter, on_reveal, on_reveal_done)
  local next_time = time()
- local inc = 1
+ local inc = 0.5
  if (screen_name == "start") inc = 0.2
 
  local function make_reveal(cell)
   local function reveal()
+   if (not cell.letter) return
+   if (inc == 0.5) sfx(2)
    if (cell.garbage) then
      cell.letter = nil
      cell.garbage = false
      cell.removed = true
+     if (on_reveal) on_reveal()
    end
-   cell.revealed = true
-   if (inc == 1) sfx(2)
-   if (on_reveal) on_reveal()
+   if (cell.letter) then
+     cell.revealed = true
+   end
   end
   return reveal
  end
 
- for row in all(puzzle.tiles) do
+ for row in all(the_puzzle.tiles) do
   for cell in all(row) do
    if (cell.letter == letter) then
     next_time += inc
@@ -1410,7 +1412,7 @@ function end_game()
  mode_name = ""
  if (game_state == "state_won") game_active_player.game_total += num_grand_prize
  if (game_active_player.human) then
-  puzzle.revealed = true
+  the_puzzle.revealed = true
   w_bonusboard.lines[3] = float_to_money_str(game_active_player.game_total).." grand total"
  end
  delay(restart, 4)
@@ -1428,22 +1430,22 @@ function new_puzzle()
   already_played = puzzles_seen[puz_idx]
  end
  local puzzle_data = split(puzzles[puz_idx], "_")
- puzzle = to_puzzle(puzzle_data[2], puzzle_data[1], true)
+ the_puzzle = to_puzzle(puzzle_data[2], puzzle_data[1], true)
  puzzles_seen[puz_idx] = true
 
  w_letterboard_init()
 
 -- fixme remove this?
- for row in all(puzzle.tiles) do
-  for cell in all(row) do
-   if (not is_vowel(cell.letter)) cell.revealed = true
-  end
- end
+-- for row in all(the_puzzle.tiles) do
+--  for cell in all(row) do
+--   if (not is_vowel(cell.letter)) cell.revealed = true
+--  end
+-- end
 
  if (bonus_mode == "solve_puzzle") reveal_letters(split("q,j,z,x,v,k"), bonus_choose_letters)
 
  for l in all(c_letters.letters) do
-   if (not includes(puzzle.letters, l) and not is_vowel(l)) then
+   if (not includes(the_puzzle.letters, l) and not is_vowel(l)) then
      w_letterboard.remaining[l].available = false
    end
  end
@@ -1467,7 +1469,9 @@ function action_solve()
    sfx(6)
    game_state = "state_won"
    w_bonusboard.lines = split("    congratulations!,,,,,")
-   reveal_letters(puzzle.garbage_letters, end_game)
+   the_puzzle.vowels_revealed = true
+   adjust_tiles()
+   reveal_letters(the_puzzle.garbage_letters, end_game)
   end
   local function on_all_incorrect()
    w_bonusboard.lines = split("wrong!,too bad.,,,,")
@@ -1502,6 +1506,7 @@ function action_solve_deferred(is_bonus_round, on_all_correct_fn, on_all_incorre
   local function on_pick()
    local all_done, correct = puzzle_guess_letter(w_letterboard.letter, is_bonus_round)
    if (all_done) then
+    mode_name = ""
     if (is_bonus_round) then
      if (correct) on_all_correct_fn() else on_all_incorrect_fn()
     end
@@ -1702,6 +1707,7 @@ function add_garbage(puzzle_letters)
  local garbage_letters = ""
  -- printh("amount of garbage: "..garbage_amount)
  while (garbage_amount > 0) do
+   -- fixme
   local garbage = rnd(garbage_letter_options)
   if (not includes(garbage_letters, garbage)) garbage_letters ..= garbage
   local place = ceil(rnd(#garbage_puzzle))
@@ -1733,17 +1739,17 @@ end
 -- into the 11,13,13,11 grid
 -- returns it as a puzzle obj
 function to_puzzle(puzzle_letters, clue, garbage)
- local puzzle = { clue = clue }
- puzzle.solution = puzzle_letters
+ local puz = { clue = clue }
+ puz.solution = puzzle_letters
  if (garbage) then
   puzzle_letters, garbage_letters = add_garbage(puzzle_letters)
  end
- puzzle.garbage_letters = garbage and garbage_letters or {}
-
- puzzle.letters = puzzle_letters
- puzzle.words = to_words(puzzle_letters)
- puzzle.tiles = to_tiles(puzzle, garbage_letters)
- return puzzle
+ puz.garbage_letters = garbage and garbage_letters or {}
+ puz.vowels_revealed = false
+ puz.letters = puzzle_letters
+ puz.words = to_words(puzzle_letters)
+ puz.tiles = to_tiles(puz, garbage_letters)
+ return puz
 end
 
 function to_words(puzzle_letters)
@@ -1795,7 +1801,7 @@ function to_tiles(puz, garbage)
      break
     end
     local is_garbage = includes(garbage, l)
-    local is_revealed = not is_vowel(l)
+    local is_revealed = puz.vowels_revealed or not is_vowel(l)
     tiles[row][rowcol+i] = { letter = l, garbage = is_garbage, revealed = is_revealed }
     i += 1
    end
@@ -1842,13 +1848,22 @@ end
 
 function from_tiles()
  puz = ""
- for row in all(puzzle.tiles) do
+ local row_idx = 0
+ local col_idx = 0
+ for row in all(the_puzzle.tiles) do
+  row_idx += 1
+  col_idx = 0
   for cell in all(row) do
+   col_idx += 1
    if (cell.letter and not cell.removed) then
     puz ..= cell.letter
+ --   printh(row_idx..","..col_idx..": "..cell.letter.." -> "..puz..": "..#puz)
+    if ((#puz == 11) or (#puz == 25) or (#puz == 39)) then
+     puz ..= " "
+    end
    end
   end
-  puz ..= " "
+  -- fixme
  end
  while (puz[#puz] == " ") do
   puz = sub(puz, 1, #puz - 1)
