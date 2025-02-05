@@ -30,6 +30,7 @@ opponents = split("james_1_let's go_fudge_yay_tax considerations~benny_2_to the 
 mode_name = ""
 puzzle = {}
 puzzles_seen = {}
+num_grand_prize = 0
 
 wait_until = 0
 wait_callback = nil
