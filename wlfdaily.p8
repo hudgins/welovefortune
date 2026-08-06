@@ -2,7 +2,9 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
-game_version = "v20250113a"
+game_version = "v20250115a"
+
+-- puzzle source - https://www.wofdb.com/api/beta/puzzle?page=1&rows=250
 
 -- fixme - eliminate this dependency
  w_scoreboard = {
@@ -23,8 +25,7 @@ c_letters = {
  letters = split("a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p,q,r,s,t,u,v,w,x,y,z"),
  consonants = split("b,c,d,f,g,h,j,k,l,m,n,p,q,r,s,t,v,w,x,y,z"),
  vowels = split("a,e,i,o,u"),
- symbols = split("1_2_3_4_5_6_7_8_9_0_-_'_ヌ█▥_._,_?_!_%_@_#_$_&_-_(_)", "_", false),
- article_an = split("a,e,f,h,i,l,m,n,o,r,s,x"),
+ symbols = split("1_2_3_4_5_6_7_8_9_0_-_'_._,_?_!_%_@_#_$_&_-_(_)", "_", false),
  ranked = {
   letters = split("e,a,r,i,o,t,n,s,l,c,u,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
   consonants = split("r,t,n,s,l,c,d,p,m,h,g,b,f,y,w,k,v,x,z,j,q"),
@@ -48,6 +49,12 @@ function toggle_theme_music(desired_music_playing)
  music(desired_music_playing)
 end
 
+function update_today_played()
+ month = stat(81)
+ day = stat(82)
+ today_played = last_played == tostr(month)..tostr(day)
+end
+
 screens = {}
 function screens_start_init()
  screens.start_view = {}
@@ -62,12 +69,23 @@ function screens.start_draw()
  if (not today_played) then
   print("❎ to play", 43, 100, clr_flashing(true))
   print("by allan hudgins", 32, 110, 7)
- else
+ elseif (start.countdown) then
   print("new puzzle tomorrow", 26, 100, clr_flashing(true))
+  print(start.countdown, 46, 110, 12)
  end
 end
 function screens.start_update()
  local start = screens.start_view
+
+ update_today_played()
+ when_hour = 23 - stat(83)
+ if (when_hour < 10) when_hour = " " .. when_hour
+ local when_min = 59 - stat(84)
+ if (when_min < 10) when_min = "0" .. when_min
+ local when_sec = 59 - stat(85)
+ if (when_sec < 10) when_sec = "0" .. when_sec
+ start.countdown = when_hour .. ":" .. when_min .. ":" .. when_sec
+
  if (btnp(5)) then 
   if (not today_played or today_played_bypass_count > 9) then
    start_slide({ w_arches, w_puzzleboard }, "off", next_round)
@@ -145,7 +163,7 @@ end
 function bonus_choose_letters()
  game_state = "state_bonus_letters"
  if (w_wheel.item_name == "$1000000") then
-  w_bonusboard.lines = split("for the million dollars^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
+  w_bonusboard.lines = split("for a million dollars^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
  else
   w_bonusboard.lines = split("for the "..float_to_money_str(num_grand_prize).." "..w_wheel.item_name.."^^choose 3 consonants:^_ _ _^and one vowel:^_", "^")
  end
@@ -392,7 +410,32 @@ function w_letterboard_activate(list, on_pick, on_undo)
 end
 
 wheel_items = {
- split("$1000000_11_100000,plant_14_3,vacation_10_800,shed_8_85,bicycle_12_70,scooter_10_180,watch_14_12,c64_12_50,toque_13_3,phone_8_120,computer_10_300,tree_12_110,lamp_14_21,tv_12_333,table_10_158,couch_13_423,truck_8_4500,t-shirt_12_1,cat_10_25,dog_14_35,boat_8_2500,hot tub_12_700,car_13_3900,vacuum_10_8"),
+--  split("bankrupt_0
+-- ,150_10
+-- ,35_14
+-- ,90_9
+-- ,30_8
+-- ,25_12
+-- ,90_10
+-- ,20_14
+-- ,40_12
+-- ,55_13
+-- ,20_9
+-- ,50_8
+-- ,bankrupt_0
+-- ,60_14
+-- ,20_12
+-- ,loseturn_10
+-- ,35_13
+-- ,25_8
+-- ,50_12
+-- ,500_7
+-- ,30_14
+-- ,80_8
+-- ,50_12
+-- ,70_13")
+-- ,
+ split("$1000000_11_100000 ,plant_14_3 ,bankrupt_0 ,shed_8_85 ,bicycle_12_70 ,t-shirt_10_2 ,watch_14_12 ,c64_12_50 ,toque_13_3 ,phone_8_120 ,computer_10_300 ,tree_12_110 ,jeep_14_21 ,tv_12_333 ,bankrupt_0 ,couch_13_423 ,truck_8_4500 ,bankrupt_0 ,cat_10_25 ,dog_14_35 ,boat_8_2500 ,hot tub_12_700 ,car_13_3900 ,vacuum_10_8"),
 }
 function w_wheel_init()
  local items = wheel_items[1]
@@ -403,6 +446,7 @@ function w_wheel_init()
   slide = "x,24,-48",
   radius = 24,
   middle_radius = 8,
+  cheat = true,
   power = "up",
   speed = 0,
   tick = 0.01,
@@ -572,6 +616,8 @@ end
 
 function _init()
  cartdata("wlftest1")
+ last_played = tostr(dget(0))..tostr(dget(1))
+ update_today_played()
  restart()
 end
 
@@ -580,12 +626,6 @@ function restart()
  event_queue = {}
  mode_name = ""
  screen_name = "start"
- name_timeout = 0
- month = stat(81)
- day = stat(82)
- date = tostr(month)..tostr(day)
- last_played = tostr(dget(0))..tostr(dget(1))
- today_played = date == last_played
 
  game_state = "state_start"
  bonus_mode = nil
@@ -833,13 +873,6 @@ function is_vowel(letter)
  return false
 end
 
-function article(letter)
- for l in all(c_letters.article_an) do
-  if (letter == l) return "an"
- end
- return "a"
-end
-
 shakey_dakeys = {}
 function start_shake(sound, amount, things)
  sfx(sound or 5)
@@ -957,6 +990,7 @@ end
 function end_game()
  mode_name = ""
  puzzle.revealed = true
+ last_played = tostr(month .. "" .. day)
  dset(0, month)
  dset(1, day)
  -- w_bonusboard.lines[3] = float_to_money_str(game_active_player.game_total).." grand total"
@@ -1092,7 +1126,7 @@ end
 function start_stop_spin()
  if (w_wheel.speed > 30 and not w_wheel.spinning) then
   if (w_wheel.speed >= 100) then
-   w_wheel.cheat = true
+   w_wheel.cheat_million = true
    w_wheel.speed = 150 + ceil(rnd(25))
    w_messageboard_set_message("super-spin!")
    start_shake(15, 10, { w_wheel })
@@ -1129,11 +1163,14 @@ function adjust_spin()
    w_wheel.just_ticked = false
   end
  else
-  if (w_wheel.cheat and (w_wheel.item_name == "bankrupt")) then
-   w_wheel.speed = 0.5
+  if (w_wheel.cheat_million and (w_wheel.item_name != "$1000000")) then
+   w_wheel.speed = 10
    w_messageboard_set_message("awfully\nlucky...")
+  elseif (w_wheel.cheat and (w_wheel.item_name == "bankrupt")) then
+   w_wheel.speed = 0.5
+   w_messageboard_set_message("yikes!")
   else
-   w_wheel.cheat = false
+   w_wheel.cheat_million = false
    w_wheel.speed = 0
    w_wheel.spinning = false
    game_state = "state_spin_completed"
@@ -1381,6 +1418,7 @@ puzzles[6] = split("fiction person_captain power~living thing_tiger lily~song ly
 puzzles[7] = split("thing_impeccable taste~phrase_an angel in disguise~thing_shock absorber~phrase_finger licking good~thing_cockroach~phrase_make your next move your best move~thing_basketball~event_valentine's day!~title_ring around the rosy~thing_traffic signal~thing_black and blue mark~thing_guide dog~song lyrics_don't think i fit in at this party~thing_buttonhole~things_dinosaur fossils~title_saturday night fever~thing_vaccum cleaner~phrase_much much more than a weekend getaway~fiction person_porky pig~fun & games_climbing a tree in the backyard~thing_can opener~whatcha wearin'?_gardening gloves~around the house_coin collection~event_kentucky derby~fun & games_playing a round of miniature golf~fun & games_diving off a diving board~whatcha doin'?_dipping my feet in the ocean~thing_helicopter~show biz_taking the stage~place_the window seat~people_national guard", "~")
 puzzles[8] = split("phrase_you won't hear me complaining!~phrase_don't you know who i am?~same letter_washington wyoming wisconsin~thing_totem pole~thing_aircraft carrier~proper name_duke university~people_salvation army~phrase_i'll be napping in the hammock~phrase_go big or go home~phrase_did you read the directions?~character_bullwinkle~thing_plaster of paris~event_weekend getaway~character_the karate kid~fun & games_oohing and aahing at fireworks~whatcha doin'?_making up my mind~phrase_i can't imagine a better day~phrase_hang ten~thing_rear-view mirror~things_hugs and kisses~place_garden path~event_giving a graduation speech~phrase_heigh-ho heigh-ho~before & after_suggestion box of chocolates~thing_egg roll~fiction person_the pink panther~whatcha doin'?_closing my eyes~food & drink_carrot cake~food & drink_crispy chips & spicy salsa~phrase_i wish you would~same letter_crayons chalk & computers", "~")
 puzzles[9] = split("thing_umbrella~title_take the a train~food & drink_steamed spinach~around the house_bath sponge~movie quote_i'm the king of the world!~thing_aquarium~food & drink_deep-fried coconut shrimp~thing_waterbed~people_cherokee indians~occupation_project manager~in the kitchen_waffle iron~phrase_many hands make light work~thing_play doh~before & after_i speak french onion soup~fiction person_superman~character_huckleberry finn~thing_vocabulary test~thing_mating call~same name_wedding & fright night~thing_tomahawk~same name_gardening & boxing gloves~character_tarzan~on the map_singapore~thing_science fiction~place_crawl space~place_the capital of georgia~thing_watchdog~rhyme time_fish sticks and trail mix~movie quote_beetlejuice beetlejuice beetlejuice~place_townhouse", "~")
+-- fix taylor swift puzzle!
 puzzles[10] = split("thing_awkward silence~around the house_junk drawer~food & drink_microwave mac & cheese~thing_zip code~fun & games_checkmate on a chessboard~proper name_singer songwriter superstar taylor swift~living thing_jellyfish~in the kitchen_parchment paper~food & drink_grilled ham~living things_amazing local wildlife~rhyme time_good luck wolfgang puck~phrase_a penny for your thoughts~people_team of international experts~whatcha doin'?_regifting~fun & games_solving puzzles~living thing_whale shark~phrase_a match made in heaven~whatcha doin'?_moving far away~phrase_i love this time of year!~place_wonderful oceanfront resort~movie title_lightyear~proper name_miranda lambert~things_pros & cons~phrase_high point of the week~phrase_today is my lucky day!~phrase_high point of the evening~place_international space station~whatcha doin'?_splurging~living thing_galloping horse~thing_barbie doll~song title_mo' money mo' problems", "~")
 puzzles[11] = split("phrase_i bought it on a whim~song lyrics_up all night to get lucky~college life_researching the professor~tv title_the crown~place_airplane hangar~thing_credit card~phrase_don't give up the ship~same letter_monaco mexico morocco~whatcha doin'?_i'm boarding the plane~event_a totally stress-free day~thing_alligator~living thing_standard poodle~thing_granola bar~character_captain america~title_chattanooga choo-choo~phrase_this is my final offer~thing_very short attention span~thing_hurricane~thing_french manicure~thing_half-dollar~thing_captain's chair~thing_a voided check~same name_king-size & flower bed~fun & games_snorkeling along the reef~thing_mousetrap~phrase_lost in thought~thing_hermit crab~phrase_good vibes only~whatcha wearin'?_puffy cardigan~people_varsity football squad", "~")
 puzzles[12] = split("whatcha doin'?_ordering a second dessert~thing_orangutan~phrase_check the score~thing_rubber band~whatcha doin'?_figuring it out~people_capacity crowd~college life_graduating with honors~character_tweedledum and tweedledee~fiction person_spiderman~food & drink_belgian waffles~fiction person_darth vader~whatcha doin'?_offering advice~on the map_gulf of mexico~event_a marvelous day at sea~places_gardens and greenhouses~occupation_librarian~event_publicity stunt~occupation_game warden~whatcha doin'?_playing it cool~phrase_happy birthday~rhyme time_that's the way to play~phrase_no buyer's remorse here~phrase_this takes things to a whole new level~whatcha doin'?_overthinking it~phrase_be my guest~rhyme time_cash in a flash~thing_autograph book~fun & games_standing on a surfboad~thing_video cassette recorder~phrase_the earth looks pretty flat to me~proper name_freddie mercury", "~")
