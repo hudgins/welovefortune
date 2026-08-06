@@ -25,7 +25,7 @@ c_letters = {
  }
 }
 
-opponents = split("james_1_let's go_fudge_yay_tax considerations~henri_2_allons-y_couche sale_magnifique_maux d'estomac~barry_3_come on_gosh_excellent_diarrhea~frank_4_let's do this_crap_yes sir_tummy troubles~sarah_5_yeet_dammit_amazing_insane itchiness~petey_6_weeeeeee_damn_awesome_a weird feeling~bjorn_7_fingers crossed_poopy diaper_great_exhaustion~wanda_8_go go go_bummer_sweet_a headache~gordy_9_go_shoot_boo-yah_stage fright~agnes_10_big money!\nno whammies_darn_hooray_an appointment", "~")
+opponents = split("deryk_9_watch this_how unfortunate_that's great_being out of town~cam_9_namaste_lessons_amazing_being late for a meeting~cloud_9_vamanos muchachos_oh no_fantastico_tending to my sheep~andrea_9_go-go-go_darn_hooray_other priorities~diana_9_allons-y_merde_hourra_conduire mes enfants~andy_9_no whammies_goddammit_yes_being bored of this~grant_9_why not_seriously_that's better_having lost interest~sari_9_go_how terrible_how wonderful_being on retreat~devin_9_let's go_darnit_yay_having made other plans~dennis_9_gentlemen_fudge_excellent_tax considerations", "~")
 
 mode_name = ""
 puzzle = {}

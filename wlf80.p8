@@ -2,7 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 41
 __lua__
 
-game_version = "v20231202"
+game_version = "v20250204"
 
 c_clr_theme = 10 -- 10 yellow, 9 orange
 
